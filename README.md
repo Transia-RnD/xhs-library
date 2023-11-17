@@ -42,7 +42,7 @@ yarn run test:integration
 
 Contributions to the Xahau Hook Standard Library are welcome. If you would like to contribute or create a new request for collaboration with Transia DAO, please follow these steps:
 
-1. Visit the Transia DAO Requests Portal at [https://dao.transia.co/requests](https://dao.transia.co/requests).
+1. Visit the Transia DAO Requests Portal at [https://dao.transia.co/dashboard/requests](https://dao.transia.co/dashboard/requests).
 2. Click on the "New Request" button.
 3. Fill out the form with the details of your proposal, including a clear description and any relevant information that can help the community understand your request.
 4. Submit the form for review by the Transia DAO community.
