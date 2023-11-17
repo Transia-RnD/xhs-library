@@ -5,7 +5,7 @@ name: Node.js CI
 
 on:
   push:
-    branches: [main, 1.x]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x]
+        node-version: [16.x, 20.x]
 
     steps:
       - uses: actions/checkout@v3
@@ -66,14 +66,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x]
-
-    services:
-      rippled:
-        image: gcr.io/thelab-924f3/dangell7-hooksv3d-standalone:latest
-        ports:
-          - 6006:6006
-        options: --health-cmd="wget localhost:6006 || exit 1" --health-interval=5s --health-retries=10 --health-timeout=2s
+        node-version: [16.x, 20.x]
 
     steps:
       - uses: actions/checkout@v3
@@ -81,6 +74,10 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
+
+      - name: Run docker in background
+        run: |
+          docker run --detach --rm --name rippled-service -p 6006:6006 --health-cmd="wget localhost:6006 || exit 1" --health-interval=5s --health-retries=10 --health-timeout=2s gcr.io/thelab-924f3/dangell7-xahau-standalone:2023.10.30.443
 
       - name: Setup npm version 7
         run: |
@@ -108,5 +105,9 @@ jobs:
       - run: yarn run build:hooks
       - run: yarn run test:integration
         env:
-          HOST: localhost
-          PORT: ${{ job.services.rippled.ports['6006'] }}
+          C2WASM_CLI_HOST: https://hook-buildbox.xrpl.org
+          RIPPLED_ENV: standalone
+      
+      - name: Stop docker container
+        if: always()
+        run: docker stop rippled-service
