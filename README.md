@@ -1,6 +1,6 @@
 # The Xahau Hook Standard Library
 
-Welcome to the Xahau Hook Standard Library, a collection of standard hooks designed to be used with the Xahau platform.
+Welcome to the Xahau Hook Standard Library, a collection of standard hooks designed to be used with the Xahau platform. This library is a collaborative effort with Transia DAO, and each hook within the library is associated with a unique Xahau Ledger Request (XLR) for easy reference and tracking.
 
 ## Getting Started
 
@@ -14,13 +14,15 @@ yarn install
 
 ## Available Hooks
 
-Below is a list of available hooks in the Xahau Hook Standard Library. Please follow the links for more information and documentation on how to use each hook.
+Below is a list of available hooks in the Xahau Hook Standard Library. Each hook is accompanied by an XLR number for reference. Please follow the links for more information and documentation on how to use each hook.
 
 ### Router Hook
 
-[Router Hook Documentation](test/integration/router/README.md)
+- **XLR Number**: XLR-1
+- [Router Hook Documentation](test/integration/router/README.md)
+- [Transia DAO Collaboration Request](https://dao.transia.co/dashboard/requests/TAmqb1V9UmS5VKU6LcLM/)
 
-_(Repeat the above section for each additional hook that is part of the library.)_
+_(Repeat the above section for each additional hook that is part of the library, including their respective XLR numbers and links to collaboration requests.)_
 
 ## Development
 
@@ -38,7 +40,15 @@ yarn run test:integration
 
 ## Contributing
 
-Contributions to the Xahau Hook Standard Library are welcome. Please read [CONTRIBUTING.md](#) for details on our code of conduct, and the process for submitting pull requests to us.
+Contributions to the Xahau Hook Standard Library are welcome. If you would like to contribute or create a new request for collaboration with Transia DAO, please follow these steps:
+
+1. Visit the Transia DAO Requests Portal at [https://dao.transia.co/requests](https://dao.transia.co/requests).
+2. Click on the "New Request" button.
+3. Fill out the form with the details of your proposal, including a clear description and any relevant information that can help the community understand your request.
+4. Submit the form for review by the Transia DAO community.
+5. Engage with the community members in the discussion of your request and provide any additional information if required.
+
+Your request will be reviewed by the community, and you will receive feedback or approval to proceed with your contribution.
 
 ## License
 
@@ -47,7 +57,3 @@ This project is licensed under the GPL-3.0-or-later License - see the [LICENSE.m
 ## Authors
 
 - **Denis Angell** - _Initial work_ - [dangell7](https://github.com/dangell7)
-
-## Acknowledgments
-
-- Thanks to all the contributors who have helped to shape the Xahau Hook Standard Library.
