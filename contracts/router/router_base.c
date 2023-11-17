@@ -1,3 +1,21 @@
+//------------------------------------------------------------------------------
+/*
+    Copyright (c) 2023 Transia, LLC
+
+    This software component is intended for use by individuals or entities who
+    possess the necessary technical understanding and qualifications to utilize
+    such components in accordance with applicable laws and regulations.
+    Unauthorized use or distribution of this component may be subject to legal
+    consequences.
+
+    The information provided in this software component is for informational
+    purposes only and should not be considered as technical advice or a
+    recommendation to engage in any specific implementation or usage strategy.
+    It is important to consult with a qualified professional or technical advisor
+    before integrating or making any decisions based on this component.
+*/
+//==============================================================================
+
 #include "hookapi.h"
 
 #define UINT8_FROM_BUF(buf)\
