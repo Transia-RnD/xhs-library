@@ -1,0 +1,23 @@
+{
+  "extends": "@tsconfig/node16/tsconfig.json",
+  "compilerOptions": {
+     "jsx": "react",
+     "composite": true,
+     "module": "commonjs",
+     "moduleResolution": "node",
+     "sourceMap": true,
+     "strict": true,
+     "pretty": true,
+     "declaration": true,
+     "declarationMap": true,
+     "strictNullChecks": false,
+     "noImplicitAny": true,
+     "noUnusedLocals": true,
+     "removeComments": true,
+     "preserveConstEnums": true,
+     "esModuleInterop": true,
+     "skipLibCheck": false,
+     "resolveJsonModule": true,
+     "preserveSymlinks": true,
+   }
+}

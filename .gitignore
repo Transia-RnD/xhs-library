@@ -1,0 +1,11 @@
+.DS_Store
+build
+# config.json
+node_modules
+/dist
+yarn-error.log
+debug.log
+
+xrpld
+
+playground.ts
