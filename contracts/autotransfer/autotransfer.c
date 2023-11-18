@@ -79,12 +79,20 @@ int64_t hook(uint32_t reserved)
     int64_t tt = otxn_type();
     if (tt != ttURITOKEN_CREATE_SELL_OFFER)
     {
-        rollback(SBUF("autotransfer: HookOn field is incorrectly set."), INVALID_TXN);
+        rollback(SBUF("autotransfer.c: HookOn field is incorrectly set."), INVALID_TXN);
     }
 
     // ACCOUNT: Hook Account
     uint8_t hook_acc[20];
     hook_account(HOOK_ACC, 20);
+
+    // ACCOUNT: Origin Tx Account
+    uint8_t otx_acc[20];
+    otxn_field(otx_acc, 20, sfAccount);
+
+    // FILTER ON: ACCOUNT
+    if (BUFFER_EQUAL_20(hook_acc, otx_acc))
+        DONE("autotransfer.c: outgoing tx on `Account`.");
 
     uint8_t tid_buffer[32];
     if (otxn_field(SBUF(tid_buffer), sfURITokenID) != 32)
