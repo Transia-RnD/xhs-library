@@ -118,8 +118,6 @@ describe('autotransfer', () => {
       testContext.client,
       result1.meta as TransactionMetadata
     )
-    console.log(hookExecutions1)
-
     expect(hookExecutions1.executions[0].HookReturnString).toMatch(
       'autotransfer.c: Tx emitted success'
     )

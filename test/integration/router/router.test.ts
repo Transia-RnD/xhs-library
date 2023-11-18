@@ -17,6 +17,10 @@ import {
   iHookParamName,
   iHookParamValue,
   ExecutionUtility,
+  clearAllHooksV3,
+  hexNamespace,
+  clearHookStateV3,
+  iHook,
 } from '@transia/hooks-toolkit'
 import { HookPosModel } from './models/HookPosModel'
 import { HookPosArray } from './models/HookPosArray'
@@ -28,13 +32,7 @@ describe('router', () => {
 
   beforeAll(async () => {
     testContext = await setupClient(serverUrl)
-  })
-  afterAll(async () => teardownClient(testContext))
-
-  it('router - success', async () => {
     const hookWallet = testContext.hook1
-    const aliceWallet = testContext.alice
-
     const hook1 = createHookPayload(
       0,
       'router_base',
@@ -73,6 +71,28 @@ describe('router', () => {
         { Hook: hook4 },
       ],
     } as SetHookParams)
+  })
+  afterAll(async () => {
+    await clearAllHooksV3({
+      client: testContext.client,
+      seed: testContext.hook1.seed,
+    } as SetHookParams)
+
+    const clearHook = {
+      Flags: SetHookFlags.hsfNSDelete,
+      HookNamespace: hexNamespace('router'),
+    } as iHook
+    await clearHookStateV3({
+      client: testContext.client,
+      seed: testContext.hook1.seed,
+      hooks: [{ Hook: clearHook }],
+    } as SetHookParams)
+    teardownClient(testContext)
+  })
+
+  it('router - success', async () => {
+    const hookWallet = testContext.hook1
+    const aliceWallet = testContext.alice
 
     const hookPos1 = new HookPosModel(1)
     const hookPos2 = new HookPosModel(0)
@@ -101,9 +121,6 @@ describe('router', () => {
       new iHookParamName('HPA'),
       new iHookParamValue(hookPosArray.encode().toUpperCase(), true)
     )
-
-    console.log(hookPosArray.encode())
-
     const builtTx1: Invoke = {
       TransactionType: 'Invoke',
       Account: aliceWallet.classicAddress,
@@ -119,8 +136,7 @@ describe('router', () => {
       testContext.client,
       result1.meta as TransactionMetadata
     )
-    console.log(hookExecutions1)
-
+    expect(hookExecutions1.executions.length).toBe(3)
     expect(hookExecutions1.executions[0].HookReturnString).toMatch(
       'router.c: Accept.'
     )
