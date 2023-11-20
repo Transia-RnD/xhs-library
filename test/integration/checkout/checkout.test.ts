@@ -20,6 +20,10 @@ import {
   iHookParamValue,
   ExecutionUtility,
   Xrpld,
+  clearAllHooksV3,
+  hexNamespace,
+  clearHookStateV3,
+  iHook,
 } from '@transia/hooks-toolkit/dist/npm/src'
 import { IssuedCurrencyAmount } from '@transia/xrpl/dist/npm/models/common'
 import { SellerModel } from './models/SellerModel'
@@ -32,18 +36,8 @@ describe('checkout', () => {
 
   beforeAll(async () => {
     testContext = await setupClient(serverUrl)
-  })
-  afterAll(async () => teardownClient(testContext))
-
-  it('checkout - success', async () => {
-    // L1 Hook
     const gwWallet = testContext.gw
     const hookWallet = testContext.hook1
-    const aliceWallet = testContext.alice
-    const seller1Wallet = testContext.bob
-    const seller2Wallet = testContext.carol
-    const seller3Wallet = testContext.dave
-
     const USD = IC.gw('USD', gwWallet.classicAddress)
     await trust(testContext.client, USD.set(100000), ...[hookWallet])
 
@@ -59,6 +53,31 @@ describe('checkout', () => {
       seed: hookWallet.seed,
       hooks: [{ Hook: hook1 }],
     } as SetHookParams)
+  })
+  afterAll(async () => {
+    await clearAllHooksV3({
+      client: testContext.client,
+      seed: testContext.hook1.seed,
+    } as SetHookParams)
+
+    const clearHook = {
+      Flags: SetHookFlags.hsfNSDelete,
+      HookNamespace: hexNamespace('checkout'),
+    } as iHook
+    await clearHookStateV3({
+      client: testContext.client,
+      seed: testContext.hook1.seed,
+      hooks: [{ Hook: clearHook }],
+    } as SetHookParams)
+    teardownClient(testContext)
+  })
+
+  it('checkout - success', async () => {
+    const hookWallet = testContext.hook1
+    const aliceWallet = testContext.alice
+    const seller1Wallet = testContext.bob
+    const seller2Wallet = testContext.carol
+    const seller3Wallet = testContext.dave
 
     const seller1 = new SellerModel(100, seller1Wallet.classicAddress)
     const seller2 = new SellerModel(100, seller2Wallet.classicAddress)
