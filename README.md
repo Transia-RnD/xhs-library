@@ -22,11 +22,23 @@ Below is a list of available hooks in the Xahau Hook Standard Library. Each hook
 - [Router Hook Documentation](test/integration/router/README.md)
 - [Transia DAO Collaboration Request](https://dao.transia.co/dashboard/requests/TAmqb1V9UmS5VKU6LcLM/)
 
+### Auction Hook
+
+- **XLR Number**: XLR-3
+- [Auction Hook Documentation](test/integration/auction/README.md)
+- [Transia DAO Collaboration Request](https://dao.transia.co/dashboard/requests/06Xb0hGJKmqaqjaEVchq/)
+
 ### Autotransfer Hook
 
 - **XLR Number**: XLR-5
 - [Autotransfer Hook Documentation](test/integration/autotransfer/README.md)
 - [Transia DAO Collaboration Request](https://dao.transia.co/dashboard/requests/afZJ95alSQRYCROGlnUY/)
+
+### Checkout Hook
+
+- **XLR Number**: XLR-7
+- [Checkout Hook Documentation](test/integration/checkout/README.md)
+- [Transia DAO Collaboration Request](https://dao.transia.co/dashboard/requests/wBdJM2k5J0e4z2o9SeKZ/)
 
 _(Repeat the above section for each additional hook that is part of the library, including their respective XLR numbers and links to collaboration requests.)_
 
