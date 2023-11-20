@@ -28,6 +28,10 @@ import {
   iHookParamName,
   iHookParamValue,
   ExecutionUtility,
+  clearAllHooksV3,
+  hexNamespace,
+  clearHookStateV3,
+  iHook,
 } from '@transia/hooks-toolkit'
 import { AuctionModel } from './models/AuctionModel'
 
@@ -53,20 +57,20 @@ describe('auctionStart', () => {
     } as SetHookParams)
   })
   afterAll(async () => {
-    // await clearAllHooksV3({
-    //   client: testContext.client,
-    //   seed: testContext.hook1.seed,
-    // } as SetHookParams)
+    await clearAllHooksV3({
+      client: testContext.client,
+      seed: testContext.hook1.seed,
+    } as SetHookParams)
 
-    // const clearHook = {
-    //   Flags: SetHookFlags.hsfNSDelete,
-    //   HookNamespace: hexNamespace('3mm'),
-    // } as iHook
-    // await clearHookStateV3({
-    //   client: testContext.client,
-    //   seed: testContext.hook1.seed,
-    //   hooks: [{ Hook: clearHook }],
-    // } as SetHookParams)
+    const clearHook = {
+      Flags: SetHookFlags.hsfNSDelete,
+      HookNamespace: hexNamespace('auction'),
+    } as iHook
+    await clearHookStateV3({
+      client: testContext.client,
+      seed: testContext.hook1.seed,
+      hooks: [{ Hook: clearHook }],
+    } as SetHookParams)
     teardownClient(testContext)
   })
 
@@ -99,17 +103,22 @@ describe('auctionStart', () => {
       aliceWallet.classicAddress,
       'ipfs://auctionState'
     )
-    const uriTokenID =
-      '09749E0754C012395AB15B13F63BC6C5BDC37B7C56BA35764FE84401D17AF6E0'
 
     // URITokenCreateSellOffer
-    const currentLedger = await testContext.client.getLedgerIndex()
+    const CLOSE_TIME: number = (
+      await testContext.client.request({
+        command: 'ledger',
+        ledger_index: 'validated',
+      })
+    ).result.ledger.close_time
     const auctionModel = new AuctionModel(
-      currentLedger,
-      currentLedger + 20,
+      CLOSE_TIME,
+      CLOSE_TIME + 20,
       10,
+      BigInt(0),
       0,
-      BigInt(0)
+      'rrrrrrrrrrrrrrrrrrrrrhoLvTp',
+      '0000000000000000000000000000000000000000000000000000000000000000'
     )
     const otxn1param1 = new iHookParamEntry(
       new iHookParamName('AM'),

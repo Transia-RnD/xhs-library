@@ -1,7 +1,7 @@
 // xrpl
 import {
   Invoke,
-  Payment,
+  EscrowCreate,
   AccountSet,
   AccountSetAsfFlags,
   URITokenMint,
@@ -62,7 +62,7 @@ describe('auction', () => {
       'auction',
       'auction',
       SetHookFlags.hsfOverride,
-      ['Payment', 'Invoke']
+      ['EscrowCreate', 'Invoke']
     )
     await setHooksV3({
       client: testContext.client,
@@ -149,15 +149,22 @@ describe('auction', () => {
       `ipfs://auctionState-${random}`
     )
 
+    const CLOSE_TIME: number = (
+      await testContext.client.request({
+        command: 'ledger',
+        ledger_index: 'validated',
+      })
+    ).result.ledger.close_time
+
     // URITokenCreateSellOffer
-    const currentLedger = await testContext.client.getLedgerIndex()
     const auctionModel = new AuctionModel(
-      currentLedger,
-      currentLedger + 5,
+      CLOSE_TIME,
+      CLOSE_TIME + 15,
       10,
+      BigInt(0),
       0,
       'rrrrrrrrrrrrrrrrrrrrrhoLvTp',
-      BigInt(0)
+      '0000000000000000000000000000000000000000000000000000000000000000'
     )
     const otxn1param1 = new iHookParamEntry(
       new iHookParamName('AM'),
@@ -196,7 +203,7 @@ describe('auction', () => {
       ...[testContext.hook1]
     )
 
-    // Payment - Carol
+    // EscrowCreate - Carol
     const otxn2param1 = new iHookParamEntry(
       new iHookParamName('TID'),
       new iHookParamValue(uriTokenID, true)
@@ -206,45 +213,24 @@ describe('auction', () => {
       currency: testContext.ic.currency as string,
       issuer: testContext.ic.issuer as string,
     }
-    const builtTx2: Payment = {
-      TransactionType: 'Payment',
+    const builtTx2: EscrowCreate = {
+      TransactionType: 'EscrowCreate',
       Account: carolWallet.classicAddress,
       Amount: txAmount1,
       Destination: hookWallet.classicAddress,
+      FinishAfter: CLOSE_TIME + 15,
+      CancelAfter: CLOSE_TIME + 20,
       HookParameters: [otxn2param1.toXrpl()],
     }
-    await Xrpld.submit(testContext.client, {
+    const result2 = await Xrpld.submit(testContext.client, {
       wallet: carolWallet,
       tx: builtTx2,
     })
 
-    // Payment - Bob
-    const otxn3param1 = new iHookParamEntry(
-      new iHookParamName('TID'),
-      new iHookParamValue(uriTokenID, true)
-    )
-    const txAmount2: IssuedCurrencyAmount = {
-      value: '99',
-      currency: testContext.ic.currency as string,
-      issuer: testContext.ic.issuer as string,
-    }
-    const builtTx3: Payment = {
-      TransactionType: 'Payment',
-      Account: bobWallet.classicAddress,
-      Amount: txAmount2,
-      Destination: hookWallet.classicAddress,
-      HookParameters: [otxn3param1.toXrpl()],
-    }
-    const result3 = await Xrpld.submit(testContext.client, {
-      wallet: bobWallet,
-      tx: builtTx3,
-    })
-
     const hookExecutions2 = await ExecutionUtility.getHookExecutionsFromMeta(
       testContext.client,
-      result3.meta as TransactionMetadata
+      result2.meta as TransactionMetadata
     )
-    console.log(hookExecutions2)
 
     const hookState = await StateUtility.getHookState(
       testContext.client,
@@ -258,6 +244,35 @@ describe('auction', () => {
     expect(hookExecutions2.executions[0].HookReturnString).toMatch(
       'auction.c: Accept.'
     )
+
+    // EscrowCreate - Bob
+    const otxn3param1 = new iHookParamEntry(
+      new iHookParamName('TID'),
+      new iHookParamValue(uriTokenID, true)
+    )
+    const txAmount2: IssuedCurrencyAmount = {
+      value: '99',
+      currency: testContext.ic.currency as string,
+      issuer: testContext.ic.issuer as string,
+    }
+    const builtTx3: EscrowCreate = {
+      TransactionType: 'EscrowCreate',
+      Account: bobWallet.classicAddress,
+      Amount: txAmount2,
+      Destination: hookWallet.classicAddress,
+      FinishAfter: CLOSE_TIME + 15,
+      CancelAfter: CLOSE_TIME + 20,
+      HookParameters: [otxn3param1.toXrpl()],
+    }
+
+    try {
+      await Xrpld.submit(testContext.client, {
+        wallet: bobWallet,
+        tx: builtTx3,
+      })
+    } catch (error: any) {
+      console.log(error.message)
+    }
 
     for (let index = 0; index < 6; index++) {
       await close(testContext.client)
@@ -278,6 +293,7 @@ describe('auction', () => {
       tx: builtTx4,
     })
     await close(testContext.client)
+    await close(testContext.client)
 
     const hookExecutions4 = await ExecutionUtility.getHookExecutionsFromMeta(
       testContext.client,
@@ -286,7 +302,7 @@ describe('auction', () => {
     console.log(hookExecutions4)
 
     expect(hookExecutions4.executions[0].HookReturnString).toMatch(
-      'auction.c: Tx emitted success'
+      'auction.c: Completed.'
     )
   })
 })

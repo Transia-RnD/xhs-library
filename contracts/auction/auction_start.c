@@ -85,28 +85,28 @@ int64_t hook(uint32_t reserved)
     uint8_t hook_acc[20];
     hook_account(HOOK_ACC, 20);
 
-    uint8_t auction_model[52];
+    uint8_t auction_model[84];
     uint8_t am_key[2] = {'A', 'M'};
-    if (otxn_param(SBUF(auction_model), SBUF(am_key)) != 52)
+    if (otxn_param(SBUF(auction_model), SBUF(am_key)) != 84)
     {
         rollback(SBUF("auction_start.c: Invalid Txn Parameter `AM`"), __LINE__);
     }
     TRACEHEX(auction_model);
 
-    uint32_t start_ledger = UINT32_FROM_BUF(auction_model);
-    uint32_t end_ledger = UINT32_FROM_BUF(auction_model + 4);
-    uint32_t cur_ledger = ledger_seq();
-    TRACEVAR(start_ledger);
-    TRACEVAR(end_ledger);
-    TRACEVAR(cur_ledger);
+    uint32_t start_time = UINT32_FROM_BUF(auction_model);
+    uint32_t end_time = UINT32_FROM_BUF(auction_model + 4);
+    uint64_t cur_time = ledger_last_time();
+    TRACEVAR(start_time);
+    TRACEVAR(end_time);
+    TRACEVAR(cur_time);
 
-    if (end_ledger < start_ledger || start_ledger == 0 || end_ledger == 0)
+    if (end_time < start_time || start_time == 0 || end_time == 0)
     {
-        rollback(SBUF("auction_start.c: Invalid Binary Model Field `end_ledger ||/< start_ledger`"), __LINE__);
+        rollback(SBUF("auction_start.c: Invalid Binary Model Field `end_time ||/< start_time`"), __LINE__);
     }
-    if (end_ledger < cur_ledger)
+    if (end_time < cur_time)
     {
-        rollback(SBUF("auction_start.c: Invalid Binary Model Field `end_ledger`"), __LINE__);
+        rollback(SBUF("auction_start.c: Invalid Binary Model Field `end_time`"), __LINE__);
     }
 
     uint8_t tid_buffer[32];

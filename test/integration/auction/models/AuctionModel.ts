@@ -1,5 +1,6 @@
 import {
   BaseModel,
+  Hash256,
   Metadata,
   UInt32,
   UInt64,
@@ -8,49 +9,55 @@ import {
 } from '@transia/hooks-toolkit/dist/npm/src/libs/binary-models'
 
 export class AuctionModel extends BaseModel {
-  startLedger: UInt32 // start ledger of the auction
-  endLedger: UInt32 // end ledger of the auction
+  startTime: UInt32 // start ledger of the auction
+  endTime: UInt32 // end ledger of the auction
   minBid: XFL // starting bid price
+  numBids: UInt64 // number of bids
   winBid: XFL // winning bid
   winAddress: XRPAddress // winning address
-  numBids: UInt64 // number of bids
+  winId: Hash256 // hash id
 
+  // 84 bytes
   constructor(
-    startLedger: UInt32, // 4 bytes
-    endLedger: UInt32, // 4 bytes
+    startTime: UInt32, // 4 bytes
+    endTime: UInt32, // 4 bytes
     minBid: XFL, // 8 bytes
+    numBids: UInt64, // 8 bytes
     winBid: XFL, // 8 bytes
-    winAddress: XRPAddress, // 8 bytes
-    numBids: UInt64 // 8 bytes
+    winAddress: XRPAddress, // 20 bytes
+    winId: Hash256 // 32 bytes
   ) {
     super()
-    this.startLedger = startLedger
-    this.endLedger = endLedger
+    this.startTime = startTime
+    this.endTime = endTime
     this.minBid = minBid
+    this.numBids = numBids
     this.winBid = winBid
     this.winAddress = winAddress
-    this.numBids = numBids
+    this.winId = winId
   }
 
   getMetadata(): Metadata {
     return [
-      { field: 'startLedger', type: 'uint32' },
-      { field: 'endLedger', type: 'uint32' },
+      { field: 'startTime', type: 'uint32' },
+      { field: 'endTime', type: 'uint32' },
       { field: 'minBid', type: 'xfl' },
+      { field: 'numBids', type: 'uint64' },
       { field: 'winBid', type: 'xfl' },
       { field: 'winAddress', type: 'xrpAddress' },
-      { field: 'numBids', type: 'uint64' },
+      { field: 'winId', type: 'hash256' },
     ]
   }
 
   toJSON() {
     return {
-      startLedger: this.startLedger,
-      endLedger: this.endLedger,
+      startTime: this.startTime,
+      endTime: this.endTime,
       minBid: this.minBid,
+      numBids: this.numBids,
       winBid: this.winBid,
       winAddress: this.winAddress,
-      numBids: this.numBids,
+      winId: this.winId,
     }
   }
 }
