@@ -20,6 +20,15 @@
     *(uint32_t*)(buf + 16) = *(uint32_t*)(i + 16);\
 }
 
+#define UINT256_TO_BUF(buf_raw, i)                       \
+    {                                                    \
+        unsigned char *buf = (unsigned char *)buf_raw;   \
+        *(uint64_t *)(buf + 0) = *(uint64_t *)(i + 0);   \
+        *(uint64_t *)(buf + 8) = *(uint64_t *)(i + 8);   \
+        *(uint64_t *)(buf + 16) = *(uint64_t *)(i + 16); \
+        *(uint64_t *)(buf + 24) = *(uint64_t *)(i + 24); \
+    }
+
 // clang-format off
 uint8_t txn[283] =
 {
@@ -84,9 +93,17 @@ int64_t hook(uint32_t reserved ) {
         DONE("voucher_claim.c: invalid otxn parameter: `H`.");
     }
 
-    uint8_t sig_buffer[70];
+    uint8_t sigl_buffer[4];
+    uint8_t sigl_key[4] = {'S', 'I', 'G', 'L'};
+    if (otxn_param(SBUF(sigl_buffer), SBUF(sigl_key)) != 4)
+    {
+        DONE("voucher_claim.c: invalid hook otxn parameter: `SIGL`.");
+    }
+    uint32_t sig_len = UINT32_FROM_BUF(sigl_buffer);
+
+    uint8_t sig_buffer[sig_len];
     uint8_t sig_key[3] = {'S', 'I', 'G'};
-    if (otxn_param(sig_buffer, 70, SBUF(sig_key)) != 70)
+    if (otxn_param(SBUF(sig_buffer), SBUF(sig_key)) != sig_len)
     {
         DONE("voucher_claim.c: invalid hook otxn parameter: `SIG`.");
     }
@@ -94,12 +111,20 @@ int64_t hook(uint32_t reserved ) {
     uint8_t model_buffer[MODEL_SIZE];
     if (state(SBUF(model_buffer), hash_buffer, 32) == 32)
     {
-        accept(SBUF("hunt_one.c: Voucher does not exist."), __LINE__);
+        accept(SBUF("voucher_claim.c: Voucher does not exist."), __LINE__);
     }
 
-    if (state(SBUF(hash_buffer), otx_acc, 32) == 32)
+    uint8_t data_in[52];
+    uint8_t hash_out[32];
+#define ACCT_OUT (data_in + 0U)
+#define HASH_OUT (data_in + 20U)
+    ACCOUNT_TO_BUF(ACCT_OUT, otx_acc);
+    UINT256_TO_BUF(HASH_OUT, hash_buffer);
+
+    util_sha512h(SBUF(hash_out), SBUF(data_in));
+    if (state(SBUF(otx_acc), SBUF(hash_out)) == 20)
     {
-        accept(SBUF("hunt_one.c: User already claimed."), __LINE__);
+        accept(SBUF("voucher_claim.c: User already claimed."), __LINE__);
     }
 
     // validate limit of claims
@@ -177,14 +202,14 @@ int64_t hook(uint32_t reserved ) {
         *b++ = (fee >> 0) & 0xFFU;
     }
 
-    TRACEHEX(txn); // <- final tx blob
+    TRACEHEX(txn);
 
     // TXN: Emit/Send Txn
     uint8_t emithash[32];
     int64_t emit_result = emit(SBUF(emithash), SBUF(txn));
     if (emit_result > 0)
     {
-        state_set(SBUF(hash_buffer), otx_acc, 32);
+        state_set(SBUF(otx_acc), SBUF(hash_out));
         accept(SBUF("voucher_claim.c: Voucher Claimed."), __LINE__);
     }
     rollback(SBUF("voucher_claim.c: Tx emitted failure."), __LINE__);

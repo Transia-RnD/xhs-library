@@ -37,8 +37,6 @@ int64_t hook(uint32_t reserved)
 
     uint8_t model_buffer[MODEL_SIZE];
     uint8_t model_key[1] = {'M'};
-    otxn_param(SBUF(model_buffer), SBUF(model_key));
-    TRACEHEX(model_buffer);
     if (otxn_param(SBUF(model_buffer), SBUF(model_key)) != MODEL_SIZE)
     {
         DONE("voucher_create.c: invalid otxn parameter: `M`.");

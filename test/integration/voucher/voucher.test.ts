@@ -35,6 +35,7 @@ import {
 } from '@transia/hooks-toolkit'
 import { IssuedCurrencyAmount } from '@transia/xrpl/dist/npm/models/common'
 import { VoucherModel } from './models/VoucherModel'
+import { uint32ToHex } from '@transia/hooks-toolkit/dist/npm/src/libs/binary-models'
 
 // Voucher: ACCEPT: success
 
@@ -147,12 +148,12 @@ describe('voucher', () => {
       new iHookParamName('H'),
       new iHookParamValue(hash, true)
     )
-    console.log(hash)
-    console.log(wallet.privateKey)
-
     const sig = sign(hash, wallet.privateKey)
-    console.log(sig.length / 2)
     const otxn2param2 = new iHookParamEntry(
+      new iHookParamName('SIGL'),
+      new iHookParamValue(uint32ToHex(sig.length / 2), true)
+    )
+    const otxn3param2 = new iHookParamEntry(
       new iHookParamName('SIG'),
       new iHookParamValue(sig, true)
     )
@@ -160,8 +161,14 @@ describe('voucher', () => {
       TransactionType: 'Invoke',
       Account: bobWallet.classicAddress,
       Destination: hookWallet.classicAddress,
-      HookParameters: [otxn2param1.toXrpl(), otxn2param2.toXrpl()],
+      HookParameters: [
+        otxn2param1.toXrpl(),
+        otxn2param2.toXrpl(),
+        otxn3param2.toXrpl(),
+      ],
     }
+    console.log(JSON.stringify(builtTx2))
+
     const result2 = await Xrpld.submit(testContext.client, {
       wallet: bobWallet,
       tx: builtTx2,
@@ -239,12 +246,13 @@ describe('voucher', () => {
       new iHookParamName('H'),
       new iHookParamValue(hash, true)
     )
-    console.log(hash)
-    console.log(wallet.privateKey)
 
     const sig = sign(hash, wallet.privateKey)
-    console.log(sig.length / 2)
     const otxn2param2 = new iHookParamEntry(
+      new iHookParamName('SIGL'),
+      new iHookParamValue(uint32ToHex(sig.length / 2), true)
+    )
+    const otxn3param2 = new iHookParamEntry(
       new iHookParamName('SIG'),
       new iHookParamValue(sig, true)
     )
@@ -252,7 +260,11 @@ describe('voucher', () => {
       TransactionType: 'Invoke',
       Account: bobWallet.classicAddress,
       Destination: hookWallet.classicAddress,
-      HookParameters: [otxn2param1.toXrpl(), otxn2param2.toXrpl()],
+      HookParameters: [
+        otxn2param1.toXrpl(),
+        otxn2param2.toXrpl(),
+        otxn3param2.toXrpl(),
+      ],
     }
     const result2 = await Xrpld.submit(testContext.client, {
       wallet: bobWallet,
