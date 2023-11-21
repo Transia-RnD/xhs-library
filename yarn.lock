@@ -676,10 +676,10 @@
   dependencies:
     "@sinonjs/commons" "^3.0.0"
 
-"@transia/hooks-toolkit@^1.0.7":
-  version "1.0.7"
-  resolved "https://registry.yarnpkg.com/@transia/hooks-toolkit/-/hooks-toolkit-1.0.7.tgz#7dff518ff82c5497720e0e6cdc72630a3adb6268"
-  integrity sha512-vUtGLm7q1Y3fPEch0bozP477EOzE/aTIfwC3soTRq0EsUBmi2onQNRbuQk1FTe0cZgFyK+D+AZq2HtOmbSoGAQ==
+"@transia/hooks-toolkit@^1.0.8":
+  version "1.0.8"
+  resolved "https://registry.yarnpkg.com/@transia/hooks-toolkit/-/hooks-toolkit-1.0.8.tgz#9cda575bdea85627a2cf6dc2b1607048a32599be"
+  integrity sha512-VomZXjs+ZIyyX/kq65C5PSsfE6tCPtg3xW6haT3W3oQHLSKxxp9vLvaYyWPWJJ+jxActHA8LtDmq8wiTUZBf1Q==
   dependencies:
     "@transia/xpop-toolkit" "^1.0.4"
     "@transia/xrpl" "^2.7.3-alpha.19"
