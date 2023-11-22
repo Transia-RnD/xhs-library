@@ -18,7 +18,7 @@ Navigate to https://hooks-builder.xrpl.org/deploy
 
 ## Step 1
 
-1. Open the hooks builder to https://hooks-builder.xrpl.org/develop/1f8109c80f504e6326db2735df2f0ad6
+1. Open the hooks builder to https://hooks-builder.xrpl.org/develop/b16d9dd9c1085278ee9e487dd6a96186
 2. Click "Compile to wasm"
 3. Click "Develop" top right
 4. Click "Set Hook" under "Alice" account
@@ -73,3 +73,18 @@ Navigate to https://hooks-builder.xrpl.org/deploy
 > Review the debug, and the successful payment operation, and the hook execution
 > Copy the HookExecutionString, paste into the [Hex Converter](https://www.rapidtables.com/convert/number/hex-to-ascii.html)
 
+# Lesson #2
+
+## Step 1
+
+1. Open the hooks builder to https://hooks-builder.xrpl.org/develop/7ef229a275e94f4be465427e401aab1d
+2. Click "Compile to wasm"
+3. Click "Develop" top right
+4. Click "Set Hook" under "Alice" account
+
+- Select the Payment type under HookOn
+
+5. Click "Suggest" under Fee
+6. Click "SetHook"
+
+> Review the sethook operation
