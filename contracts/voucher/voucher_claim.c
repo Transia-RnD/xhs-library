@@ -84,50 +84,64 @@ int64_t hook(uint32_t reserved ) {
     hook_account(hook_acc + 12, 20);
 
     if (BUFFER_EQUAL_20(hook_acc + 12, otx_acc + 12))
-        DONE("voucher_claim.c: outgoing tx on: `Account`.");
+        rollback(SBUF("voucher_claim.c: outgoing tx on: `Account`."), __LINE__);
 
+    // OTXN PARAM: Hash
     uint8_t hash_buffer[32];
     uint8_t hash_key[1] = {'H'};
     if (otxn_param(SBUF(hash_buffer), SBUF(hash_key)) != 32)
     {
-        DONE("voucher_claim.c: invalid otxn parameter: `H`.");
+        rollback(SBUF("voucher_claim.c: invalid otxn parameter: `H`."), __LINE__);
     }
 
+    // OTXN PARAM: Signature Length
     uint8_t sigl_buffer[4];
     uint8_t sigl_key[4] = {'S', 'I', 'G', 'L'};
     if (otxn_param(SBUF(sigl_buffer), SBUF(sigl_key)) != 4)
     {
-        DONE("voucher_claim.c: invalid hook otxn parameter: `SIGL`.");
+        rollback(SBUF("voucher_claim.c: invalid hook otxn parameter: `SIGL`."), __LINE__);
     }
     uint32_t sig_len = UINT32_FROM_BUF(sigl_buffer);
 
+    // OTXN PARAM: Signature
     uint8_t sig_buffer[sig_len];
     uint8_t sig_key[3] = {'S', 'I', 'G'};
     if (otxn_param(SBUF(sig_buffer), SBUF(sig_key)) != sig_len)
     {
-        DONE("voucher_claim.c: invalid hook otxn parameter: `SIG`.");
+        rollback(SBUF("voucher_claim.c: invalid hook otxn parameter: `SIG`."), __LINE__);
     }
 
+    // VALIDATION: Exists
     uint8_t model_buffer[MODEL_SIZE];
-    if (state(SBUF(model_buffer), hash_buffer, 32) == 32)
+    if (state(SBUF(model_buffer), hash_buffer, 32) != MODEL_SIZE)
     {
-        accept(SBUF("voucher_claim.c: Voucher does not exist."), __LINE__);
+        rollback(SBUF("voucher_claim.c: Voucher does not exist."), __LINE__);
     }
 
+    // VALIDATION: User Limit
     uint8_t data_in[52];
     uint8_t hash_out[32];
 #define ACCT_OUT (data_in + 0U)
 #define HASH_OUT (data_in + 20U)
-    ACCOUNT_TO_BUF(ACCT_OUT, otx_acc);
+    ACCOUNT_TO_BUF(ACCT_OUT, otx_acc + 12);
     UINT256_TO_BUF(HASH_OUT, hash_buffer);
-
     util_sha512h(SBUF(hash_out), SBUF(data_in));
-    if (state(SBUF(otx_acc), SBUF(hash_out)) == 20)
+    uint8_t dump[20];
+    if (state(SBUF(dump), SBUF(hash_out)) == 20)
     {
-        accept(SBUF("voucher_claim.c: User already claimed."), __LINE__);
+        rollback(SBUF("voucher_claim.c: User already claimed."), __LINE__);
     }
 
-    // validate limit of claims
+    // VALIDATION: Limit
+    int32_t limit = UINT32_FROM_BUF(model_buffer + 0U);
+    int64_t count_buf[1];
+    state(SBUF(count_buf), model_buffer + 57U, 32);
+    if (count_buf[0] > limit)
+    {
+        rollback(SBUF("voucher_claim.c: Voucher limit reached."), __LINE__);
+    }
+
+    // VALIDATION: Signature
     if (util_verify(SBUF(hash_buffer), SBUF(sig_buffer), SBUF(model_buffer + 57U)) == 0)
     {
         rollback(SBUF("voucher_claim.c: Invalid signature."), __LINE__);
@@ -209,7 +223,9 @@ int64_t hook(uint32_t reserved ) {
     int64_t emit_result = emit(SBUF(emithash), SBUF(txn));
     if (emit_result > 0)
     {
-        state_set(SBUF(otx_acc), SBUF(hash_out));
+        count_buf[0]++;
+        state_set(count_buf, 1, model_buffer + 57U, 32);
+        state_set(otx_acc + 12, 20, SBUF(hash_out));
         accept(SBUF("voucher_claim.c: Voucher Claimed."), __LINE__);
     }
     rollback(SBUF("voucher_claim.c: Tx emitted failure."), __LINE__);

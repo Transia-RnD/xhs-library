@@ -37,7 +37,10 @@ import { IssuedCurrencyAmount } from '@transia/xrpl/dist/npm/models/common'
 import { VoucherModel } from './models/VoucherModel'
 import { uint32ToHex } from '@transia/hooks-toolkit/dist/npm/src/libs/binary-models'
 
-// Voucher: ACCEPT: success
+// Voucher: ROLLBACK: user already claimed
+// Voucher: ROLLBACK: voucher limit
+// Voucher: ACCEPT: success - xrp
+// Voucher: ACCEPT: success - iou
 
 describe('voucher', () => {
   let testContext: XrplIntegrationTestContext
@@ -86,6 +89,231 @@ describe('voucher', () => {
       hooks: [{ Hook: clearHook }],
     } as SetHookParams)
     teardownClient(testContext)
+  })
+
+  it('voucher - xrp failure: user claimed', async () => {
+    const hookWallet = testContext.hook1
+    const aliceWallet = testContext.alice
+    const bobWallet = testContext.bob
+
+    const wallet = Wallet.fromSeed('ssd5BQz7JuB4SjSnf7DJkyJi7NbKZ')
+
+    const CLOSE_TIME: number = (
+      await testContext.client.request({
+        command: 'ledger',
+        ledger_index: 'validated',
+      })
+    ).result.ledger.close_time
+
+    const voucher = new VoucherModel(
+      10,
+      CLOSE_TIME,
+      CLOSE_TIME + 10,
+      10,
+      '',
+      'rrrrrrrrrrrrrrrrrrrrrhoLvTp',
+      wallet.publicKey
+    )
+    const hash = generateHash(Buffer.from(voucher.encode().toUpperCase()))
+
+    console.log(voucher.encode().toUpperCase().length / 2)
+
+    const otxn1param1 = new iHookParamEntry(
+      new iHookParamName('M'),
+      new iHookParamValue(voucher.encode().toUpperCase(), true)
+    )
+    const otxn1param2 = new iHookParamEntry(
+      new iHookParamName('H'),
+      new iHookParamValue(hash, true)
+    )
+    const builtTx1: Payment = {
+      TransactionType: 'Payment',
+      Account: aliceWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      Amount: xrpToDrops(100),
+      HookParameters: [otxn1param1.toXrpl(), otxn1param2.toXrpl()],
+    }
+
+    const result1 = await Xrpld.submit(testContext.client, {
+      wallet: aliceWallet,
+      tx: builtTx1,
+    })
+
+    const hookExecutions1 = await ExecutionUtility.getHookExecutionsFromMeta(
+      testContext.client,
+      result1.meta as TransactionMetadata
+    )
+    expect(hookExecutions1.executions[0].HookReturnString).toMatch(
+      'voucher_create.c: Voucher Created.'
+    )
+
+    const otxn2param1 = new iHookParamEntry(
+      new iHookParamName('H'),
+      new iHookParamValue(hash, true)
+    )
+    const sig = sign(hash, wallet.privateKey)
+    const otxn2param2 = new iHookParamEntry(
+      new iHookParamName('SIGL'),
+      new iHookParamValue(uint32ToHex(sig.length / 2), true)
+    )
+    const otxn3param2 = new iHookParamEntry(
+      new iHookParamName('SIG'),
+      new iHookParamValue(sig, true)
+    )
+    const builtTx2: Invoke = {
+      TransactionType: 'Invoke',
+      Account: bobWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      HookParameters: [
+        otxn2param1.toXrpl(),
+        otxn2param2.toXrpl(),
+        otxn3param2.toXrpl(),
+      ],
+    }
+    const result2 = await Xrpld.submit(testContext.client, {
+      wallet: bobWallet,
+      tx: builtTx2,
+    })
+
+    const hookExecutions2 = await ExecutionUtility.getHookExecutionsFromMeta(
+      testContext.client,
+      result2.meta as TransactionMetadata
+    )
+    expect(hookExecutions2.executions[0].HookReturnString).toMatch(
+      'voucher_claim.c: Voucher Claimed.'
+    )
+    try {
+      const builtTx3: Invoke = {
+        TransactionType: 'Invoke',
+        Account: bobWallet.classicAddress,
+        Destination: hookWallet.classicAddress,
+        HookParameters: [
+          otxn2param1.toXrpl(),
+          otxn2param2.toXrpl(),
+          otxn3param2.toXrpl(),
+        ],
+      }
+      await Xrpld.submit(testContext.client, {
+        wallet: bobWallet,
+        tx: builtTx3,
+      })
+      throw Error('Fail Test')
+    } catch (error: any) {
+      expect(error.message).toMatch('voucher_claim.c: User already claimed.')
+    }
+  })
+
+  it('voucher - xrp failure: limit', async () => {
+    const hookWallet = testContext.hook1
+    const aliceWallet = testContext.alice
+    const bobWallet = testContext.bob
+    const carolWallet = testContext.carol
+
+    const wallet = Wallet.fromSeed('ssd5BQz7JuB4SjSnf7DJkyJi7NbKZ')
+
+    const CLOSE_TIME: number = (
+      await testContext.client.request({
+        command: 'ledger',
+        ledger_index: 'validated',
+      })
+    ).result.ledger.close_time
+
+    const voucher = new VoucherModel(
+      1,
+      CLOSE_TIME,
+      CLOSE_TIME + 10,
+      100,
+      '',
+      'rrrrrrrrrrrrrrrrrrrrrhoLvTp',
+      wallet.publicKey
+    )
+    const hash = generateHash(Buffer.from(voucher.encode().toUpperCase()))
+
+    console.log(voucher.encode().toUpperCase().length / 2)
+
+    const otxn1param1 = new iHookParamEntry(
+      new iHookParamName('M'),
+      new iHookParamValue(voucher.encode().toUpperCase(), true)
+    )
+    const otxn1param2 = new iHookParamEntry(
+      new iHookParamName('H'),
+      new iHookParamValue(hash, true)
+    )
+    const builtTx1: Payment = {
+      TransactionType: 'Payment',
+      Account: aliceWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      Amount: xrpToDrops(100),
+      HookParameters: [otxn1param1.toXrpl(), otxn1param2.toXrpl()],
+    }
+
+    const result1 = await Xrpld.submit(testContext.client, {
+      wallet: aliceWallet,
+      tx: builtTx1,
+    })
+
+    const hookExecutions1 = await ExecutionUtility.getHookExecutionsFromMeta(
+      testContext.client,
+      result1.meta as TransactionMetadata
+    )
+    expect(hookExecutions1.executions[0].HookReturnString).toMatch(
+      'voucher_create.c: Voucher Created.'
+    )
+
+    const otxn2param1 = new iHookParamEntry(
+      new iHookParamName('H'),
+      new iHookParamValue(hash, true)
+    )
+    const sig = sign(hash, wallet.privateKey)
+    const otxn2param2 = new iHookParamEntry(
+      new iHookParamName('SIGL'),
+      new iHookParamValue(uint32ToHex(sig.length / 2), true)
+    )
+    const otxn3param2 = new iHookParamEntry(
+      new iHookParamName('SIG'),
+      new iHookParamValue(sig, true)
+    )
+    const builtTx2: Invoke = {
+      TransactionType: 'Invoke',
+      Account: bobWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      HookParameters: [
+        otxn2param1.toXrpl(),
+        otxn2param2.toXrpl(),
+        otxn3param2.toXrpl(),
+      ],
+    }
+    const result2 = await Xrpld.submit(testContext.client, {
+      wallet: bobWallet,
+      tx: builtTx2,
+    })
+
+    const hookExecutions2 = await ExecutionUtility.getHookExecutionsFromMeta(
+      testContext.client,
+      result2.meta as TransactionMetadata
+    )
+    expect(hookExecutions2.executions[0].HookReturnString).toMatch(
+      'voucher_claim.c: Voucher Claimed.'
+    )
+    try {
+      const builtTx3: Invoke = {
+        TransactionType: 'Invoke',
+        Account: carolWallet.classicAddress,
+        Destination: hookWallet.classicAddress,
+        HookParameters: [
+          otxn2param1.toXrpl(),
+          otxn2param2.toXrpl(),
+          otxn3param2.toXrpl(),
+        ],
+      }
+      await Xrpld.submit(testContext.client, {
+        wallet: carolWallet,
+        tx: builtTx3,
+      })
+      throw Error('Fail Test')
+    } catch (error: any) {
+      expect(error.message).toMatch('voucher_claim.c: Voucher limit reached.')
+    }
   })
 
   it('voucher - xrp success', async () => {
