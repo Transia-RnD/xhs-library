@@ -1,9 +1,13 @@
 
 #include "hookapi.h"
 
+// Lesson # 1
+
 // Hook Parameter
 // Name: AMT
 // Value (XFL=10): 0080C6A47E8DC354
+
+
 
 int64_t hook(uint32_t reserved)
 {

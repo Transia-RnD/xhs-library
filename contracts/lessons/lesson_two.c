@@ -3,8 +3,10 @@
  */
 #include "hookapi.h"
 
+// Lesson # 2
+
 // Txn Hook Parameter #1
-// Name: S
+// Name: ARRAY
 // Value: 030080C6A47E8D0355F51DFC2A09D62CBBA1DFBDD4691DAC96AD98B90F0080C6A47E8D0355B389FBCED0AF9DCDFF62900BFAEFA3EB872D8A960080E03779C3D154AA266540F7DACC27E264B75ED0A5ED7330BFB614
 // 1 byte = length of array
 // Repeating for each distribution
@@ -87,7 +89,7 @@ int64_t hook(uint32_t reserved)
     }
 
     uint8_t param_buffer[256];
-    uint8_t param_key[2] = {'S', 'A'};
+    uint8_t param_key[5] = {'A', 'R', 'R', 'A', 'Y'};
     int64_t otxn_param_size = otxn_param(param_buffer, 256, SBUF(param_key));
     int64_t num_sellers = param_buffer[0];
 
