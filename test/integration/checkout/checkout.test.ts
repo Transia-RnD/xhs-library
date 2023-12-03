@@ -112,8 +112,6 @@ describe('checkout', () => {
       testContext.client,
       result.meta as TransactionMetadata
     )
-    console.log(hookExecutions.executions[0].HookReturnString)
-
     expect(hookExecutions.executions[0].HookReturnString).toMatch(
       'checkout.c: Finished.'
     )
