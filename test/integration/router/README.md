@@ -25,6 +25,10 @@ Here is an example of how to invoke a transaction with the router hook:
 
 ```typescript
 // Invoke
+const otxn1param1 = new iHookParamEntry(
+  new iHookParamName('HPA'),
+  new iHookParamValue("0A01000101000000000000", true)
+)
 const builtTx1: Invoke = {
   TransactionType: 'Invoke',
   Account: aliceWallet.classicAddress,
