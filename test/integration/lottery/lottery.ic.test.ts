@@ -12,6 +12,8 @@ import {
   setupClient,
   teardownClient,
   serverUrl,
+  trust,
+  IC,
   close,
 } from '@transia/hooks-toolkit/dist/npm/src/libs/xrpl-helpers'
 // src
@@ -38,6 +40,7 @@ import {
   // uint64ToHex,
 } from '@transia/hooks-toolkit/dist/npm/src/libs/binary-models'
 import { LotteryModel } from './models/LotteryModel'
+import { IssuedCurrencyAmount } from '@transia/xrpl/dist/npm/models/common'
 
 // Router: ACCEPT: success
 
@@ -72,6 +75,10 @@ describe('auction', () => {
     } as SetHookParams)
 
     const hookWallet = testContext.hook1
+
+    const gwWallet = testContext.gw
+    const USD = IC.gw('USD', gwWallet.classicAddress)
+    await trust(testContext.client, USD.set(100000), ...[hookWallet])
 
     const acct1hook1 = createHookPayload(
       0,
@@ -199,6 +206,11 @@ describe('auction', () => {
     const hash = generateHash(Buffer.from(lotteryEnd.HookStateData))
     console.log(hash)
 
+    const amount: IssuedCurrencyAmount = {
+      issuer: testContext.ic.issuer as string,
+      currency: testContext.ic.currency as string,
+      value: '10',
+    }
     // Payment
     const carolWallet = testContext.carol
     const otxn2param1 = new iHookParamEntry(
@@ -213,7 +225,7 @@ describe('auction', () => {
       TransactionType: 'Payment',
       Account: carolWallet.classicAddress,
       Destination: hookWallet.classicAddress,
-      Amount: '10000000',
+      Amount: amount,
       HookParameters: [otxn2param1.toXrpl(), otxn2param2.toXrpl()],
     }
     const result2 = await Xrpld.submit(testContext.client, {
@@ -243,7 +255,7 @@ describe('auction', () => {
       TransactionType: 'Payment',
       Account: daveWallet.classicAddress,
       Destination: hookWallet.classicAddress,
-      Amount: '10000000',
+      Amount: amount,
       HookParameters: [otxn3param1.toXrpl(), otxn3param2.toXrpl()],
     }
     const result3 = await Xrpld.submit(testContext.client, {

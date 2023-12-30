@@ -84,6 +84,19 @@ uint8_t data[8];
 #define MODEL_SIZE 36
 #define SEQ_OUT (data + 0U)
 
+// STABLE COIN ACCEPTED (GATEHUB)
+uint8_t curr_usd[20] = {
+    0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
+    0x00U, 0x00U, 0x55U, 0x53U, 0x44U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U};
+
+// uint8_t issuer_usd[20] = {
+//     0x2AU, 0xDBU, 0x0BU, 0x39U, 0x59U, 0xD6U, 0x0AU, 0x6EU, 0x69U, 0x91U, 
+//     0xF7U, 0x29U, 0xE1U, 0x91U, 0x8BU, 0x71U, 0x63U, 0x92U, 0x52U, 0x30U};
+
+uint8_t issuer_usd[20] = {
+    0xA4U, 0x07U, 0xAF, 0x58U, 0x56U, 0xCCU, 0xF3U, 0xC4U, 0x26U, 0x19U, 
+    0xDAU, 0xA9U, 0x25U, 0x81U, 0x3FU, 0xC9U, 0x55U, 0xC7U, 0x29U, 0x83U};
+
 uint8_t lottery_start_ns[32] = {
     0x0EU, 0xD0U, 0xEBU, 0x28U, 0xB2U, 0x4DU, 0x81U, 0x2DU, 0xA0U, 0xC8U,
     0x4FU, 0xDDU, 0xC0U, 0x64U, 0x14U, 0xE0U, 0xC6U, 0x45U, 0x26U, 0x7CU,
@@ -117,10 +130,10 @@ int64_t hook(uint32_t reserved)
 
     int64_t el_time = FLIP_ENDIAN_64(UINT64_FROM_BUF(elt_buffer));
     int64_t cl_time = ledger_last_time();
-    if (cl_time <= el_time)
-    {
-        rollback(SBUF("lottery_end.c: Lottery not ended."), __LINE__);
-    }
+    // if (cl_time <= el_time)
+    // {
+    //     rollback(SBUF("lottery_end.c: Lottery not ended."), __LINE__);
+    // }
 
     // OTXN PARAM: Hash
     uint8_t hash_buffer[32];
@@ -169,25 +182,27 @@ int64_t hook(uint32_t reserved)
     uint32_t lls = fls + 4;
     *((uint32_t *)(LLS_OUT)) = FLIP_ENDIAN(lls);
 
-    int64_t amount_xfl = FLIP_ENDIAN_64(UINT64_FROM_BUF(model_buffer + 0U));
-    TRACEVAR(amount_xfl);
-    int64_t payout_xfl = float_multiply(amount_xfl, float_set(0, count));
-    TRACEVAR(payout_xfl);
+    // KEYLET: TrustLine
+    uint8_t bal_kl[34];
+    int64_t result = util_keylet(SBUF(bal_kl), KEYLET_LINE, hook_acc + 12, 20, issuer_usd, 20, curr_usd, 20);
 
-    if (float_compare(payout_xfl, 0, COMPARE_LESS | COMPARE_EQUAL) == 1)
+    // SLOT SET:
+    int64_t result_one = slot_set(SBUF(bal_kl), 1);
+
+    if (slot_set(SBUF(bal_kl), 2) != 2)
+        accept(SBUF("lottery_end.c: Could not load target balance"), __LINE__);
+
+    // SLOT SUBFIELD: sfBalance
+    if (slot_subfield(1, sfBalance, 1) != 1)
+        accept(SBUF("lottery_end.c: Could not load target balance 2"), __LINE__);
+
+    int64_t balance_xfl = slot_float(1); // <- amount as token
+
+    if (float_compare(balance_xfl, 0, COMPARE_LESS | COMPARE_EQUAL) == 1)
         rollback(SBUF("lottery_end.c: invalid calc parameter `Amount`."), __LINE__);
 
     // TXN PREPARE: Amount
-    uint64_t drops = float_int(payout_xfl, 6, 1);
-    uint8_t *b = AMOUNT_OUT + 1;
-    *b++ = 0b01000000 + ((drops >> 56) & 0b00111111);
-    *b++ = (drops >> 48) & 0xFFU;
-    *b++ = (drops >> 40) & 0xFFU;
-    *b++ = (drops >> 32) & 0xFFU;
-    *b++ = (drops >> 24) & 0xFFU;
-    *b++ = (drops >> 16) & 0xFFU;
-    *b++ = (drops >> 8) & 0xFFU;
-    *b++ = (drops >> 0) & 0xFFU;
+    float_sto(AMOUNT_OUT, 49, curr_usd, 20, issuer_usd, 20, balance_xfl, sfAmount);
 
     // TXN PREPARE: Dest Tag <- Source Tag
     if (otxn_field(DTAG_OUT, 4, sfSourceTag) == 4)
