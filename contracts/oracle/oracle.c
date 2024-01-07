@@ -18,21 +18,6 @@
 
 #include "hookapi.h"
 
-// -----------------------------------------------------------------------------
-
-/**
- *
- * These functions should be moved into the macro.c file
- */
-
-#define UINT8_FROM_BUF(buf) \
-    (((uint8_t)((buf)[0]) << 0))
-
-// -----------------------------------------------------------------------------
-
-
-
-// BINARY MODEL
 int64_t hook(uint32_t reserved)
 {
 
