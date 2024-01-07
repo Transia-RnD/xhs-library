@@ -18,7 +18,8 @@
 
 #include "hookapi.h"
 
-#define LEDGER_OFFSET 604100 // 7 days
+// #define LEDGER_OFFSET 604100 // 7 days
+#define LEDGER_OFFSET 5 // 5 seconds
 uint8_t data[8];
 #define SEQ_OUT (data + 0U)
 

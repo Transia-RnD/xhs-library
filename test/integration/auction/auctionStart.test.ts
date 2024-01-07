@@ -43,13 +43,13 @@ describe('auctionStart', () => {
   beforeAll(async () => {
     testContext = await setupClient(serverUrl)
     const hookWallet = testContext.hook1
-    const hook = createHookPayload(
-      0,
-      'auction_start',
-      'auction',
-      SetHookFlags.hsfCollect + SetHookFlags.hsfOverride,
-      ['URITokenCreateSellOffer']
-    )
+    const hook = createHookPayload({
+      version: 0,
+      createFile: 'auction_start',
+      namespace: 'auction',
+      flags: SetHookFlags.hsfCollect + SetHookFlags.hsfOverride,
+      hookOnArray: ['URITokenCreateSellOffer'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: hookWallet.seed,

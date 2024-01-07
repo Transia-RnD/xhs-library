@@ -113,7 +113,7 @@ uint8_t txn[317] =
 // clang-format on
 
 // clang-format off
-uint8_t e_txn[274] =
+uint8_t e_txn[268] =
 {
 /* size,upto */
 /*   3,  0 */ 0x12U, 0x00U, 0x04U,                                                             /* tt = EscrowCancel */
@@ -122,27 +122,26 @@ uint8_t e_txn[274] =
 /*   5, 13 */ 0x99U, 0x99U, 0x99U, 0x99U, 0x99U,                                               /* dtag, flipped */
 /*   6, 18 */ 0x20U, 0x1AU, 0x00U, 0x00U, 0x00U, 0x00U,                                        /* first ledger seq */
 /*   6, 24 */ 0x20U, 0x1BU, 0x00U, 0x00U, 0x00U, 0x00U,                                        /* last ledger seq */
-/*   6, 30 */ 0x20U, 0x19U, 0x00U, 0x00U, 0x00U, 0x00U,                                        /* offer sequence  */
-/*  34, 36 */ 0x50U, 0x23U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,   /* hash256 id */
-/*   9, 70 */ 0x68U, 0x40U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,                   /* fee      */
-/*  35, 79 */ 0x73U, 0x21U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* pubkey   */
-/*  22,114 */ 0x81U, 0x14U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,                           /* src acc  */
-/*  22,136 */ 0x82U, 0x14U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,                           /* owner acc  */
-/* 116,158 */                                                                                  /* emit details */
-/*   0,274 */
+/*  34, 30 */ 0x50U, 0x23U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,   /* hash256 id */
+/*   9, 64 */ 0x68U, 0x40U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,                   /* fee      */
+/*  35, 73 */ 0x73U, 0x21U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* pubkey   */
+/*  22,108 */ 0x81U, 0x14U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,                           /* src acc  */
+/*  22,130 */ 0x82U, 0x14U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,                           /* owner acc  */
+/* 116,152 */                                                                                  /* emit details */
+/*   0,268 */
 };
 // clang-format on
 
 // ESCROW TX BUILDER
 #define E_TT_OUT (e_txn + 2U)
-#define E_HOOK_ACC (e_txn + 116U)
+#define E_HOOK_ACC (e_txn + 110U)
 #define E_DTAG_OUT (e_txn + 14U)
 #define E_FLS_OUT (e_txn + 20U)
 #define E_LLS_OUT (e_txn + 26U)
-#define E_OWNER_OUT (e_txn + 138U)
-#define E_ID_OUT (e_txn + 38U)
-#define E_EMIT_OUT (e_txn + 158U)
-#define E_FEE_OUT (e_txn + 71U)
+#define E_OWNER_OUT (e_txn + 132U)
+#define E_ID_OUT (e_txn + 32U)
+#define E_EMIT_OUT (e_txn + 152U)
+#define E_FEE_OUT (e_txn + 65U)
 
 // TX BUILDER
 #define FLS_OUT (txn + 20U)

@@ -50,20 +50,20 @@ describe('auction', () => {
     testContext = await setupClient(serverUrl)
     const hookWallet = testContext.hook1
     const carolWallet = testContext.carol
-    const acct1hook1 = createHookPayload(
-      0,
-      'auction_start',
-      'auction',
-      SetHookFlags.hsfCollect + SetHookFlags.hsfOverride,
-      ['URITokenCreateSellOffer']
-    )
-    const acct1hook2 = createHookPayload(
-      0,
-      'auction',
-      'auction',
-      SetHookFlags.hsfOverride,
-      ['EscrowCreate', 'Invoke']
-    )
+    const acct1hook1 = createHookPayload({
+      version: 0,
+      createFile: 'auction_start',
+      namespace: 'auction',
+      flags: SetHookFlags.hsfCollect + SetHookFlags.hsfOverride,
+      hookOnArray: ['URITokenCreateSellOffer'],
+    })
+    const acct1hook2 = createHookPayload({
+      version: 0,
+      createFile: 'auction',
+      namespace: 'auction',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['EscrowCreate', 'Invoke'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: hookWallet.seed,
@@ -80,13 +80,13 @@ describe('auction', () => {
       wallet: carolWallet,
       tx: asTx,
     })
-    const acct2hook1 = createHookPayload(
-      0,
-      'autotransfer',
-      'autotransfer',
-      SetHookFlags.hsfCollect + SetHookFlags.hsfOverride,
-      ['URITokenCreateSellOffer']
-    )
+    const acct2hook1 = createHookPayload({
+      version: 0,
+      createFile: 'autotransfer',
+      namespace: 'autotransfer',
+      flags: SetHookFlags.hsfCollect + SetHookFlags.hsfOverride,
+      hookOnArray: ['URITokenCreateSellOffer'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: carolWallet.seed,
@@ -236,7 +236,7 @@ describe('auction', () => {
       testContext.client,
       hookWallet.classicAddress,
       uriTokenID,
-      'auction'
+      hexNamespace('auction')
     )
     const model = decodeModel(hookState.HookStateData, AuctionModel)
     console.log(model)

@@ -41,13 +41,13 @@ describe('checkout', () => {
     const USD = IC.gw('USD', gwWallet.classicAddress)
     await trust(testContext.client, USD.set(100000), ...[hookWallet])
 
-    const hook1 = createHookPayload(
-      0,
-      'checkout',
-      'checkout',
-      SetHookFlags.hsfOverride,
-      ['Payment']
-    )
+    const hook1 = createHookPayload({
+      version: 0,
+      createFile: 'checkout',
+      namespace: 'checkout',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Payment'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: hookWallet.seed,

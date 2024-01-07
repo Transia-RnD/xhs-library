@@ -33,34 +33,34 @@ describe('router', () => {
   beforeAll(async () => {
     testContext = await setupClient(serverUrl)
     const hookWallet = testContext.hook1
-    const hook1 = createHookPayload(
-      0,
-      'router_base',
-      'router',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
-    const hook2 = createHookPayload(
-      0,
-      'router_check_1',
-      'router',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
-    const hook3 = createHookPayload(
-      0,
-      'router_check_2',
-      'router',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
-    const hook4 = createHookPayload(
-      0,
-      'router_check_3',
-      'router',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
+    const hook1 = createHookPayload({
+      version: 0,
+      createFile: 'router_base',
+      namespace: 'router',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
+    const hook2 = createHookPayload({
+      version: 0,
+      createFile: 'router_check_1',
+      namespace: 'router',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
+    const hook3 = createHookPayload({
+      version: 0,
+      createFile: 'router_check_2',
+      namespace: 'router',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
+    const hook4 = createHookPayload({
+      version: 0,
+      createFile: 'router_check_3',
+      namespace: 'router',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: hookWallet.seed,

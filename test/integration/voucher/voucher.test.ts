@@ -53,20 +53,20 @@ describe('voucher', () => {
     const USD = IC.gw('USD', testContext.gw.classicAddress)
     await trust(testContext.client, USD.set(100000), ...[hookWallet])
 
-    const hook1 = createHookPayload(
-      0,
-      'voucher_create',
-      'router',
-      SetHookFlags.hsfOverride,
-      ['Payment']
-    )
-    const hook2 = createHookPayload(
-      0,
-      'voucher_claim',
-      'router',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
+    const hook1 = createHookPayload({
+      version: 0,
+      createFile: 'voucher_create',
+      namespace: 'router',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Payment'],
+    })
+    const hook2 = createHookPayload({
+      version: 0,
+      createFile: 'voucher_claim',
+      namespace: 'router',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: hookWallet.seed,

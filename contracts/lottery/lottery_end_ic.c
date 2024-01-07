@@ -80,7 +80,8 @@ uint8_t txn[283] =
 #define EMIT_OUT (txn + 167U)
 
 uint8_t data[8];
-#define LEDGER_OFFSET 604100 // 7 days
+// #define LEDGER_OFFSET 604100 // 7 days
+#define LEDGER_OFFSET 5 // 5 seconds
 #define MODEL_SIZE 36
 #define SEQ_OUT (data + 0U)
 
@@ -130,10 +131,10 @@ int64_t hook(uint32_t reserved)
 
     int64_t el_time = FLIP_ENDIAN_64(UINT64_FROM_BUF(elt_buffer));
     int64_t cl_time = ledger_last_time();
-    // if (cl_time <= el_time)
-    // {
-    //     rollback(SBUF("lottery_end.c: Lottery not ended."), __LINE__);
-    // }
+    if (cl_time <= el_time)
+    {
+        rollback(SBUF("lottery_end.c: Lottery not ended."), __LINE__);
+    }
 
     // OTXN PARAM: Hash
     uint8_t hash_buffer[32];

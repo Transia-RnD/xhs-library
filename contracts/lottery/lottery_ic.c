@@ -81,9 +81,9 @@ int64_t hook(uint32_t reserved)
     uint8_t elt_buffer[8];
     state_foreign(elt_buffer, 8, hook_acc + 12, 20, lottery_start_ns, 32, hook_acc + 12, 20);
 
-    int64_t end_ledger = FLIP_ENDIAN_64(UINT64_FROM_BUF(elt_buffer));
+    int64_t end_ledger_time = FLIP_ENDIAN_64(UINT64_FROM_BUF(elt_buffer));
     int64_t ll_time = ledger_last_time();
-    if (ll_time > end_ledger)
+    if (ll_time > end_ledger_time)
     {
         rollback(SBUF("lottery.c: Lottery ended."), __LINE__);
     }

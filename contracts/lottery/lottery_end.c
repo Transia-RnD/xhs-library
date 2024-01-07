@@ -80,7 +80,8 @@ uint8_t txn[283] =
 #define EMIT_OUT (txn + 167U)
 
 uint8_t data[8];
-#define LEDGER_OFFSET 604100 // 7 days
+// #define LEDGER_OFFSET 604100 // 7 days
+#define LEDGER_OFFSET 5 // 5 seconds
 #define MODEL_SIZE 36
 #define SEQ_OUT (data + 0U)
 

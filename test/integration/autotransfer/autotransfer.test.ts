@@ -39,13 +39,13 @@ describe('autotransfer', () => {
   beforeAll(async () => {
     testContext = await setupClient(serverUrl)
     const hookWallet = testContext.hook1
-    const hook = createHookPayload(
-      0,
-      'autotransfer',
-      'autotransfer',
-      SetHookFlags.hsfCollect + SetHookFlags.hsfOverride,
-      ['URITokenCreateSellOffer']
-    )
+    const hook = createHookPayload({
+      version: 0,
+      createFile: 'autotransfer',
+      namespace: 'autotransfer',
+      flags: SetHookFlags.hsfCollect + SetHookFlags.hsfOverride,
+      hookOnArray: ['URITokenCreateSellOffer'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: hookWallet.seed,

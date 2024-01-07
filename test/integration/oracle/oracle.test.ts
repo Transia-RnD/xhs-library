@@ -59,7 +59,7 @@ describe('oracle', () => {
 
     await clearAllHooksV3({
       client: testContext.client,
-      seed: testContext.carol.seed,
+      seed: testContext.hook1.seed,
     } as SetHookParams)
     teardownClient(testContext)
   })
