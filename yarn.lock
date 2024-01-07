@@ -676,13 +676,13 @@
   dependencies:
     "@sinonjs/commons" "^3.0.0"
 
-"@transia/hooks-toolkit@^1.0.8":
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/@transia/hooks-toolkit/-/hooks-toolkit-1.0.8.tgz#9cda575bdea85627a2cf6dc2b1607048a32599be"
-  integrity sha512-VomZXjs+ZIyyX/kq65C5PSsfE6tCPtg3xW6haT3W3oQHLSKxxp9vLvaYyWPWJJ+jxActHA8LtDmq8wiTUZBf1Q==
+"@transia/hooks-toolkit@^1.0.11":
+  version "1.0.11"
+  resolved "https://registry.yarnpkg.com/@transia/hooks-toolkit/-/hooks-toolkit-1.0.11.tgz#0059503a594e8bd6a73531689b64ae79f7647269"
+  integrity sha512-2NZiUm6M/tfGc0fnV3yXSKS0o4sSnsd5hOeFmh8OSlFu7LUx5b6U3FcvvPUyDmkXv6jTR5wr6qxeKO2fvG6eiw==
   dependencies:
     "@transia/xpop-toolkit" "^1.0.4"
-    "@transia/xrpl" "^2.7.3-alpha.19"
+    "@transia/xrpl" "^2.7.3-alpha.20"
     "@types/create-hash" "^1.2.4"
     "@types/elliptic" "^6.4.16"
     c2wasm-cli "^1.0.6"
@@ -762,10 +762,10 @@
     lodash "^4.17.4"
     ws "^8.2.2"
 
-"@transia/xrpl@^2.7.3-alpha.19":
-  version "2.7.3-alpha.19"
-  resolved "https://registry.yarnpkg.com/@transia/xrpl/-/xrpl-2.7.3-alpha.19.tgz#8f4552f1ceaa400cb76706d382243e2a482d7745"
-  integrity sha512-gjvPlYrrazq/Z4zm+YjtKUCjuoEbTr40E8J0Tww0XxjOuvkhCxy5Fi4SyWLZigaTPEM4vjPOT4jMm/HN8IINow==
+"@transia/xrpl@^2.7.3-alpha.20":
+  version "2.7.3-alpha.22"
+  resolved "https://registry.yarnpkg.com/@transia/xrpl/-/xrpl-2.7.3-alpha.22.tgz#01f6e719125e27674676b005e8702ccadaf27a63"
+  integrity sha512-oasyVBVPb2kMeVgf0ldpNoS1RIn9vM+q4b3LS0TqtLy3rUvECj/xCUuSRfFr/mLznvc9ZPTzGTpTyWMxgR+Quw==
   dependencies:
     "@transia/ripple-address-codec" "^4.2.8-alpha.0"
     "@transia/ripple-binary-codec" "^1.4.6-alpha.6"
