@@ -48,7 +48,7 @@ The Checkout Hook logic is implemented in `checkout.c`. It evaluates the transac
 To debug the Checkout Hook, monitor the xrpld logs for `HookTrace` entries:
 
 ```shell
-tail -f xrpld/log/debug.log | grep HookTrace
+tail -f xahau/log/debug.log | grep HookTrace
 ```
 
 ## Contributing
