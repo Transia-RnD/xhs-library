@@ -93,7 +93,10 @@ int64_t hook(uint32_t reserved)
     // HOOK PARAM: Currency
     uint8_t curr_buffer[20];
     uint8_t curr_key[1] = {'C'};
-    hook_param(curr_buffer, 20, SBUF(curr_key));
+    if (hook_param(curr_buffer, 20, SBUF(curr_key)) != 20)
+    {
+        rollback(SBUF("redirect.c: Invalid Hook Parameter `C`"), __LINE__);
+    }
     TRACEHEX(amount_buf + CURRENCY_OFFSET);
     TRACEHEX(curr_buffer);
     if (!BUFFER_EQUAL_20(amount_buf + CURRENCY_OFFSET, curr_buffer))
@@ -103,7 +106,10 @@ int64_t hook(uint32_t reserved)
 
     // HOOK PARAM: Account
     uint8_t dest_key[1] = {'A'};
-    hook_param(OTX_ACC, 20, SBUF(dest_key));
+    if (hook_param(OTX_ACC, 20, SBUF(dest_key)) != 20)
+    {
+        rollback(SBUF("redirect.c: Invalid Hook Parameter `A`"), __LINE__);
+    }
 
     // TXN: PREPARE: Init
     etxn_reserve(1);
