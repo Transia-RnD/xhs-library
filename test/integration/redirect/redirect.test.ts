@@ -82,8 +82,7 @@ describe('redirect', () => {
     teardownClient(testContext)
   })
 
-  it('oracle - success', async () => {
-    // Invoke - Update the oracle
+  it('redirect - success', async () => {
     const aliceWallet = testContext.alice
     const hookWallet = testContext.hook1
 
