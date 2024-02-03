@@ -60,7 +60,6 @@ int64_t hook(uint32_t reserved)
     TRACESTR("redirect.c: Called.");
 
     // ACCOUNT: Hook Account
-    uint8_t hook_acc[20];
     hook_account(HOOK_ACC, 20);
 
     // ACCOUNT: Origin Tx Account
@@ -68,7 +67,7 @@ int64_t hook(uint32_t reserved)
     otxn_field(otx_acc, 20, sfAccount);
 
     // FILTER ON: ACCOUNT
-    if (BUFFER_EQUAL_20(hook_acc, otx_acc))
+    if (BUFFER_EQUAL_20(HOOK_ACC, otx_acc))
         DONE("redirect: outgoing tx on `Account`.");
 
     uint8_t amount_buf[48];
@@ -101,7 +100,7 @@ int64_t hook(uint32_t reserved)
     TRACEHEX(curr_buffer);
     if (!BUFFER_EQUAL_20(amount_buf + CURRENCY_OFFSET, curr_buffer))
     {
-        rollback(SBUF("redirect.c: Invalid Currency `USD`"), __LINE__);
+        accept(SBUF("redirect.c: Invalid Currency `USD`"), __LINE__);
     }
 
     // HOOK PARAM: Account

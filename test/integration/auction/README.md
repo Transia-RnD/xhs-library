@@ -56,7 +56,7 @@ The Auction hook logic is implemented in `auction.c`. It evaluates the auction p
 To debug the Auction hook, you can monitor the xrpld logs for `HookTrace` entries:
 
 ```shell
-tail -f xrpld/log/debug.log | grep HookTrace
+tail -f xahau/log/debug.log | grep HookTrace
 ```
 
 ## Contributing

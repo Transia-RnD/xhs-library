@@ -8,6 +8,7 @@ import {
   serverUrl,
   trust,
   close,
+  pay,
 } from '@transia/hooks-toolkit/dist/npm/src/libs/xrpl-helpers'
 // src
 import {
@@ -37,10 +38,24 @@ describe('redirect', () => {
 
   beforeAll(async () => {
     testContext = await setupClient(serverUrl)
-    const hookWallet = testContext.hook1
-    const redirectWallet = testContext.bob
+    const redirectWallet = testContext.alice
 
-    await trust(testContext.client, testContext.ic.set(100000), ...[hookWallet])
+    await trust(
+      testContext.client,
+      testContext.ic.set(100000),
+      ...[testContext.hook1]
+    )
+    await pay(
+      testContext.client,
+      testContext.ic.set(50000),
+      testContext.gw,
+      ...[testContext.hook1.classicAddress]
+    )
+    await trust(
+      testContext.client,
+      testContext.ic.set(100000),
+      ...[testContext.hook2]
+    )
 
     const hook1param1 = new iHookParamEntry(
       new iHookParamName('C'),
@@ -60,7 +75,12 @@ describe('redirect', () => {
     })
     await setHooksV3({
       client: testContext.client,
-      seed: hookWallet.seed,
+      seed: testContext.hook1.seed,
+      hooks: [{ Hook: acct1hook1 }],
+    } as SetHookParams)
+    await setHooksV3({
+      client: testContext.client,
+      seed: testContext.hook2.seed,
       hooks: [{ Hook: acct1hook1 }],
     } as SetHookParams)
   })
@@ -83,23 +103,23 @@ describe('redirect', () => {
   })
 
   it('redirect - success', async () => {
-    const aliceWallet = testContext.alice
-    const hookWallet = testContext.hook1
+    const hookWallet1 = testContext.hook1
+    const hookWallet2 = testContext.hook2
 
     const amount: IssuedCurrencyAmount = {
       issuer: testContext.ic.issuer as string,
       currency: testContext.ic.currency as string,
-      value: '10',
+      value: '1',
     }
     const builtTx1: Payment = {
       TransactionType: 'Payment',
-      Account: aliceWallet.classicAddress,
-      Destination: hookWallet.classicAddress,
+      Account: hookWallet1.classicAddress,
+      Destination: hookWallet2.classicAddress,
       Amount: amount,
     }
 
     const result1 = await Xrpld.submit(testContext.client, {
-      wallet: aliceWallet,
+      wallet: hookWallet1,
       tx: builtTx1,
     })
     const hookExecutions1 = await ExecutionUtility.getHookExecutionsFromMeta(
