@@ -3,7 +3,6 @@ import {
   Payment,
   SetHookFlags,
   TransactionMetadata,
-  Transaction,
   unixTimeToRippleTime,
 } from '@transia/xrpl'
 // xrpl-helpers
@@ -24,6 +23,9 @@ import {
   iHookParamName,
   iHookParamValue,
   ExecutionUtility,
+  clearAllHooksV3,
+  hexNamespace,
+  iHook,
 } from '@transia/hooks-toolkit'
 import {
   currencyToHex,
@@ -93,20 +95,20 @@ describe('funds - Success Group', () => {
     // API: Create Funding Source
   })
   afterAll(async () => {
-    // const hookWallet = testContext.hook1
-    // await clearAllHooksV3({
-    //   client: testContext.client,
-    //   seed: hookWallet.seed,
-    // } as SetHookParams)
-    // const clearHook = {
-    //   Flags: SetHookFlags.hsfNSDelete,
-    //   HookNamespace: hexNamespace('pausable'),
-    // } as iHook
-    // await setHooksV3({
-    //   client: testContext.client,
-    //   seed: hookWallet.seed,
-    //   hooks: [{ Hook: clearHook }],
-    // } as SetHookParams)
+    const hookWallet = testContext.hook1
+    await clearAllHooksV3({
+      client: testContext.client,
+      seed: hookWallet.seed,
+    } as SetHookParams)
+    const clearHook = {
+      Flags: SetHookFlags.hsfNSDelete,
+      HookNamespace: hexNamespace('pausable'),
+    } as iHook
+    await setHooksV3({
+      client: testContext.client,
+      seed: hookWallet.seed,
+      hooks: [{ Hook: clearHook }],
+    } as SetHookParams)
     teardownClient(testContext)
   })
 
