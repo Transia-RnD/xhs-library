@@ -102,7 +102,7 @@ describe('funds - Success Group', () => {
     } as SetHookParams)
     const clearHook = {
       Flags: SetHookFlags.hsfNSDelete,
-      HookNamespace: hexNamespace('pausable'),
+      HookNamespace: hexNamespace('funds'),
     } as iHook
     await setHooksV3({
       client: testContext.client,
