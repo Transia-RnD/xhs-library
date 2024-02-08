@@ -23,9 +23,9 @@ import {
   iHookParamName,
   iHookParamValue,
   ExecutionUtility,
-  clearAllHooksV3,
   hexNamespace,
   iHook,
+  clearAllHooksV3,
 } from '@transia/hooks-toolkit'
 import {
   currencyToHex,
@@ -278,6 +278,85 @@ describe('funds - Success Group', () => {
     await close(testContext.client)
     expect(hookExecutions.executions[0].HookReturnString).toEqual(
       'Funds: Emitted settlement.'
+    )
+  })
+
+  it('operation - user withdrawal', async () => {
+    const hookWallet = testContext.hook1
+    const adminWallet = testContext.frank
+    const settleWallet = testContext.frank
+    const privateKey = testContext.grace.privateKey
+
+    const amount = 10
+    const expiration = unixTimeToRippleTime(Date.now() + 3600)
+    const sequence = 0
+    const hex =
+      xrpAddressToHex(settleWallet.classicAddress) +
+      xflToHex(amount) +
+      uint32ToHex(expiration) +
+      uint32ToHex(sequence)
+
+    const signature = sign(hex, privateKey)
+    expect(verify(hex, signature, testContext.grace.publicKey)).toBe(true)
+
+    const otxnParam1 = new iHookParamEntry(
+      new iHookParamName('OP'),
+      new iHookParamValue('W')
+    )
+    const otxnParam2 = new iHookParamEntry(
+      new iHookParamName('SIG'),
+      new iHookParamValue(hex + signature, true)
+    )
+    const builtTx: Invoke = {
+      TransactionType: 'Invoke',
+      Account: adminWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      HookParameters: [otxnParam1.toXrpl(), otxnParam2.toXrpl()],
+    }
+    const result = await Xrpld.submit(testContext.client, {
+      wallet: adminWallet,
+      tx: builtTx,
+    })
+    const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
+      testContext.client,
+      result.meta as TransactionMetadata
+    )
+    await close(testContext.client)
+    expect(hookExecutions.executions[0].HookReturnString).toEqual(
+      'Funds: Emitted withdrawal.'
+    )
+  })
+  it('operation - creditcard refund', async () => {
+    const hookWallet = testContext.hook1
+    const adminWallet = testContext.frank
+
+    const amount: IssuedCurrencyAmount = {
+      issuer: testContext.ic.issuer,
+      currency: testContext.ic.currency,
+      value: '100',
+    }
+    const otxnParam1 = new iHookParamEntry(
+      new iHookParamName('OP'),
+      new iHookParamValue('R')
+    )
+    const builtTx: Payment = {
+      TransactionType: 'Payment',
+      Account: adminWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      Amount: amount,
+      HookParameters: [otxnParam1.toXrpl()],
+    }
+    const result = await Xrpld.submit(testContext.client, {
+      wallet: adminWallet,
+      tx: builtTx,
+    })
+    const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
+      testContext.client,
+      result.meta as TransactionMetadata
+    )
+    await close(testContext.client)
+    expect(hookExecutions.executions[0].HookReturnString).toEqual(
+      'Funds: Refunded.'
     )
   })
 })

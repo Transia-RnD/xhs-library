@@ -333,7 +333,7 @@ int64_t hook(uint32_t r)
                 uint64_t upto;
                 state(&upto, 8, sig_acc, 20);
 
-                if (upto != (sig_nce + 1))
+                if (upto != sig_nce)
                     NOPE("Funds: Nonce out of sequence.");
 
                 // check bal can support withdraw
