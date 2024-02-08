@@ -121,7 +121,7 @@ describe('funds - Success Group', () => {
     )
     const otxnParam2 = new iHookParamEntry(
       new iHookParamName('AMT'),
-      new iHookParamValue(xflToHex(10), true)
+      new iHookParamValue(xflToHex(100000), true)
     )
     const builtTx: Invoke = {
       TransactionType: 'Invoke',
