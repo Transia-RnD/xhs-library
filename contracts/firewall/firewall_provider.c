@@ -22,12 +22,8 @@ int64_t hook(uint32_t r)
 {
     _g(1,1);
 
-    uint8_t ttbuf[16];
-    int64_t br = otxn_field(SBUF(ttbuf), sfTransactionType);
-    uint32_t txntype = ((uint32_t)(ttbuf[0]) << 16U) + ((uint32_t)(ttbuf[1]));
-
     // pass anything that isn't a ttINVOKE
-    if (txntype != 99)
+    if (otxn_type() != ttINVOKE)
         DONE();
 
     // get the account id
@@ -84,11 +80,7 @@ int64_t hook(uint32_t r)
 
         uint8_t* dptr = *ptr == 0 ? txn_id : 0;
         uint64_t dlen = *ptr == 0 ? 32 : 0;
-        ASSERT((state_set(
-                    dptr, dlen,
-                    ptr+1, 20
-                    ) == dlen);
-
+        ASSERT(state_set(dptr, dlen, ptr+1, 20) == dlen);
         ptr += 21;
     }
 

@@ -42,7 +42,7 @@ int64_t hook(uint32_t r)
     uint32_t tt = otxn_type();
 
     if (tt == 22)
-        accept(SBUF("Firewall: Passing SetHook txn"), __LINE__);
+        accept(SBUF("Firewall: Ignoring SetHook txn"), __LINE__);
 
     // get the relevant amount, if any
     int64_t amount = -1;
@@ -52,7 +52,7 @@ int64_t hook(uint32_t r)
     if (slot_subfield(1, sfAmount, 1) == 1)
     {
         amount = slot_float(1);
-        amount_native = slot_size(1) == 9;
+        amount_native = slot_size(1) == 8;
     }
 
     // check flags
@@ -66,7 +66,7 @@ int64_t hook(uint32_t r)
         hook_param(SBUF(provider), SBUF(param_name));
         uint8_t dummy[64];
         if (state_foreign(dummy, 32, SBUF(otxn_account), dummy + 32, 32, SBUF(provider)) > 0)
-            rollback(SBUF("Blocklist match"), __LINE__);
+            rollback(SBUF("Firewall: Blocklist match"), __LINE__);
     }
 
     // Firewall
@@ -79,7 +79,7 @@ int64_t hook(uint32_t r)
 
             // check if its on the list of blocked txn types
             if (tts[tt >> 3] & (tt % 8))
-                rollback(SBUF("Firewall blocked txn type"), __LINE__);
+                rollback(SBUF("Firewall: Txn type"), __LINE__);
 
         }
 
@@ -88,20 +88,22 @@ int64_t hook(uint32_t r)
         {
         
             if (flagbuf[2] & 2U)
-                rollback(SBUF("Firewall blocked incoming partial payment"), __LINE__);
+                rollback(SBUF("Firewall: Incoming partial payment"), __LINE__);
 
+            TRACEVAR(amount_native);
             // threshold for drops
             uint8_t param_name[2] = {'F', amount_native ? 'D' : 'T'};
+            TRACEHEX(param_name);
 
             // if the parameter doesn't exist then the threshold is unlimited or rather 9.999999999999999e+95
             int64_t threshold = 7810234554605699071LL;
             hook_param(&threshold, 8, SBUF(param_name));
+            TRACEVAR(amount);
+            TRACEVAR(threshold);
             if (float_compare(amount, threshold, COMPARE_LESS) == 1)
-                rollback(SBUF("Firewall blocked amount below threshold"), __LINE__);
-
+                rollback(SBUF("Firewall: Amount below threshold"), __LINE__);
         }
-
     }
 
-    return accept(SBUF("Firewall: Passing txn within thresholds"), __LINE__);
+    return accept(SBUF("Firewall: Txn within thresholds"), __LINE__);
 }

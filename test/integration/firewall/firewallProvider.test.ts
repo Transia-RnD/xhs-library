@@ -1,12 +1,11 @@
 import {
   Invoke,
   LedgerEntryRequest,
-  // Payment,
+  Payment,
   SetHookFlags,
   TransactionMetadata,
-  // xrpToDrops,
+  xrpToDrops,
 } from '@transia/xrpl'
-import { AccountID } from '@transia/ripple-binary-codec/dist/types'
 import {
   HookDefinition as LeHookDefinition,
   Hook as LeHook,
@@ -28,9 +27,9 @@ import {
   padHexString,
   // padHexString,
 } from '@transia/hooks-toolkit'
+import { xrpAddressToHex } from '@transia/hooks-toolkit/dist/npm/src/libs/binary-models'
 
 // Firewall.Provider: ACCEPT: TT != Invoke
-// Firewall.Provider: ACCEPT: TX ACCOUNT != HOOK
 // Firewall.Provider: ACCEPT: TX Destination != HOOK
 
 // Firewall.Provider: ACCEPT: Add Account
@@ -41,15 +40,11 @@ import {
 // Firewall.Provider: ACCEPT: Test Max - TODO
 // Firewall.Provider: ACCEPT: Test Fee for exponential growth - TODO
 
-describe('Application.firewall_provider - Success Group', () => {
+describe('firewall provider - Success Group', () => {
   let testContext: XrplIntegrationTestContext
 
   beforeAll(async () => {
     testContext = await setupClient(serverUrl)
-  })
-  afterAll(async () => teardownClient(testContext))
-
-  it('firewall base - tt != invoke', async () => {
     const hook = createHookPayload({
       version: 0,
       createFile: 'firewall_provider',
@@ -62,7 +57,10 @@ describe('Application.firewall_provider - Success Group', () => {
       seed: testContext.alice.seed,
       hooks: [{ Hook: hook }],
     } as SetHookParams)
+  })
+  afterAll(async () => teardownClient(testContext))
 
+  it('firewall provider - tt != invoke', async () => {
     // PAYMENT IN
     const aliceWallet = testContext.alice
     const bobWallet = testContext.bob
@@ -77,62 +75,11 @@ describe('Application.firewall_provider - Success Group', () => {
       tx: builtTx,
     })
 
-    const hookEmitted = await ExecutionUtility.getHookExecutionsFromMeta(
-      testContext.client,
-      result.meta as TransactionMetadata
-    )
-    expect(hookEmitted.executions[0].HookReturnString).toMatch('')
+    const metadata = result.meta as TransactionMetadata
+    expect(metadata.HookExecutions).toBe(undefined)
   })
 
-  // INVALID FAIL
-  // it('firewall base - tx account != hook', async () => {
-  //   const hook = createHookPayload(
-  //     0,
-  //     'firewall_provider',
-  //     'firewall_provider',
-  //     SetHookFlags.hsfOverride,
-  //     ['Invoke']
-  //   )
-  //   await setHooksV3({
-  //     client: testContext.client,
-  //     seed: testContext.alice.seed,
-  //     hooks: [{ Hook: hook }],
-  //   } as SetHookParams)
-
-  //   // INVOKE IN
-  //   const aliceWallet = testContext.alice
-  //   const bobWallet = testContext.bob
-  //   const builtTx: Invoke = {
-  //     TransactionType: 'Invoke',
-  //     Account: bobWallet.classicAddress,
-  //     Destination: aliceWallet.classicAddress,
-  //   }
-  //   const result = await Xrpld.submit(testContext.client, {
-  //     wallet: aliceWallet,
-  //     tx: builtTx,
-  //   })
-
-  //   const hookEmitted = await ExecutionUtility.getHookExecutionsFromMeta(
-  //     testContext.client,
-  //     result.meta as TransactionMetadata
-  //   )
-  //   expect(hookEmitted.executions[0].HookReturnString).toMatch('')
-  // })
-
-  it('firewall base - tx dest != hook', async () => {
-    const hook = createHookPayload({
-      version: 0,
-      createFile: 'firewall_provider',
-      namespace: 'firewall_provider',
-      flags: SetHookFlags.hsfOverride,
-      hookOnArray: ['Invoke'],
-    })
-    await setHooksV3({
-      client: testContext.client,
-      seed: testContext.alice.seed,
-      hooks: [{ Hook: hook }],
-    } as SetHookParams)
-
+  it('firewall provider - tx dest != hook', async () => {
     // INVOKE OUT
     const aliceWallet = testContext.alice
     const bobWallet = testContext.bob
@@ -153,19 +100,6 @@ describe('Application.firewall_provider - Success Group', () => {
   })
 
   it('firewall provider - add account state', async () => {
-    const hook = createHookPayload({
-      version: 0,
-      createFile: 'firewall_provider',
-      namespace: 'firewall_provider',
-      flags: SetHookFlags.hsfOverride,
-      hookOnArray: ['Invoke'],
-    })
-    await setHooksV3({
-      client: testContext.client,
-      seed: testContext.alice.seed,
-      hooks: [{ Hook: hook }],
-    } as SetHookParams)
-
     // INVOKE OUT
     const aliceWallet = testContext.alice
     const blob = formatAccountBlob([testContext.carol.classicAddress])
@@ -178,6 +112,12 @@ describe('Application.firewall_provider - Success Group', () => {
       wallet: aliceWallet,
       tx: builtTx,
     })
+    const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
+      testContext.client,
+      result.meta as TransactionMetadata
+    )
+    // DONEEMPTY
+    expect(hookExecutions.executions[0].HookReturnString).toEqual('')
 
     const leHook = await StateUtility.getHook(
       testContext.client,
@@ -189,40 +129,19 @@ describe('Application.firewall_provider - Success Group', () => {
     }
     const hookDefRes = await testContext.client.request(hookDefRequest)
     const leHookDef = hookDefRes.result.node as LeHookDefinition
-
-    const aliceAccHex = AccountID.from(aliceWallet.classicAddress).toHex()
     const hookState = await StateUtility.getHookState(
       testContext.client,
       testContext.alice.classicAddress,
-      padHexString(aliceAccHex),
+      padHexString(xrpAddressToHex(testContext.carol.classicAddress)),
       leHookDef.HookNamespace as string
     )
-    const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
-      testContext.client,
-      result.meta as TransactionMetadata
-    )
-    // DONEEMPTY
-    expect(hookExecutions.executions[0].HookReturnString).toEqual('')
     expect(hookState.HookStateData).toBeDefined()
   })
 
   it('firewall provider - remove account state', async () => {
-    const hook = createHookPayload({
-      version: 0,
-      createFile: 'firewall_provider',
-      namespace: 'firewall_provider',
-      flags: SetHookFlags.hsfOverride,
-      hookOnArray: ['Invoke'],
-    })
-    await setHooksV3({
-      client: testContext.client,
-      seed: testContext.alice.seed,
-      hooks: [{ Hook: hook }],
-    } as SetHookParams)
-
     // INVOKE OUT
     const aliceWallet = testContext.alice
-    const blob = formatAccountBlob([testContext.carol.classicAddress])
+    const blob = formatAccountBlob([], [testContext.carol.classicAddress])
     const builtTx: Invoke = {
       TransactionType: 'Invoke',
       Account: aliceWallet.classicAddress,
@@ -255,15 +174,13 @@ describe('Application.firewall_provider - Success Group', () => {
       }
       const hookDefRes = await testContext.client.request(hookDefRequest)
       const leHookDef = hookDefRes.result.node as LeHookDefinition
-
-      const aliceAccHex = AccountID.from(aliceWallet.classicAddress).toHex()
-      const hookState = await StateUtility.getHookState(
+      await StateUtility.getHookState(
         testContext.client,
         testContext.alice.classicAddress,
-        padHexString(aliceAccHex),
+        padHexString(xrpAddressToHex(testContext.carol.classicAddress)),
         leHookDef.HookNamespace as string
       )
-      expect(hookState.HookStateData).toBeDefined()
+      throw Error('Expected Failure')
     } catch (error: unknown) {
       if (error instanceof Error) {
         expect(error.message).toEqual('entryNotFound')
