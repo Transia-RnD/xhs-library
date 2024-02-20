@@ -45,9 +45,6 @@ describe('funds - Success Group', () => {
   beforeAll(async () => {
     testContext = await setupClient(serverUrl)
 
-    // API: Auth
-    // API: KYC
-    // API: Create Account
     const hookWallet = testContext.hook1
     const adminWallet = testContext.frank
     const settleWallet = testContext.frank
@@ -92,7 +89,6 @@ describe('funds - Success Group', () => {
       seed: hookWallet.seed,
       hooks: [{ Hook: hook1 }],
     } as SetHookParams)
-    // API: Create Funding Source
   })
   afterAll(async () => {
     const hookWallet = testContext.hook1
@@ -141,7 +137,6 @@ describe('funds - Success Group', () => {
     expect(hookExecutions.executions[0].HookReturnString).toEqual(
       'Funds: Emitted TrustSet to initialize.'
     )
-    // API: Create Card
   })
 
   it('operation - pause/unpause', async () => {
@@ -283,7 +278,7 @@ describe('funds - Success Group', () => {
 
   it('operation - user withdrawal', async () => {
     const hookWallet = testContext.hook1
-    const adminWallet = testContext.frank
+    const userWallet = testContext.alice
     const settleWallet = testContext.frank
     const privateKey = testContext.grace.privateKey
 
@@ -309,12 +304,12 @@ describe('funds - Success Group', () => {
     )
     const builtTx: Invoke = {
       TransactionType: 'Invoke',
-      Account: adminWallet.classicAddress,
+      Account: userWallet.classicAddress,
       Destination: hookWallet.classicAddress,
       HookParameters: [otxnParam1.toXrpl(), otxnParam2.toXrpl()],
     }
     const result = await Xrpld.submit(testContext.client, {
-      wallet: adminWallet,
+      wallet: userWallet,
       tx: builtTx,
     })
     const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
