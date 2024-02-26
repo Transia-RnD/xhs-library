@@ -24,6 +24,8 @@ import {
   teardownClient,
   ledgerAccept,
   serverUrl,
+  trust,
+  pay,
 } from '@transia/hooks-toolkit/dist/npm/src/libs/xrpl-helpers'
 // src
 import {
@@ -60,11 +62,24 @@ async function advanceby(ctx: XrplIntegrationTestContext, amount: number) {
   await Promise.all(promises)
 }
 
-describe('Application.highvalue_block', () => {
+describe('highvalue - Block', () => {
   let testContext: XrplIntegrationTestContext
 
   beforeAll(async () => {
     testContext = await setupClient(serverUrl)
+    // Setup Hook
+    await trust(
+      testContext.client,
+      testContext.ic.set(100000),
+      ...[testContext.hook1]
+    )
+
+    await pay(
+      testContext.client,
+      testContext.ic.set(50000),
+      testContext.gw,
+      ...[testContext.hook1.classicAddress]
+    )
   })
   afterAll(async () => {
     const hookWallet = testContext.hook1
@@ -312,7 +327,7 @@ describe('Application.highvalue_block', () => {
       })
     } catch (error: any) {
       expect(error.message).toEqual(
-        'High value: Too soon, wait until 10 ledgers have passed'
+        'High value: Too soon, wait until 10 ledgers have passed.'
       )
     }
   })
@@ -398,7 +413,7 @@ describe('Application.highvalue_block', () => {
 
     const leHook = await StateUtility.getHook(
       testContext.client,
-      testContext.alice.classicAddress
+      testContext.hook1.classicAddress
     )
     const hookDefRequest: LedgerEntryRequest = {
       command: 'ledger_entry',
@@ -415,7 +430,7 @@ describe('Application.highvalue_block', () => {
     try {
       await StateUtility.getHookState(
         testContext.client,
-        testContext.alice.classicAddress,
+        testContext.hook1.classicAddress,
         hash,
         leHookDef.HookNamespace as string
       )
@@ -523,7 +538,7 @@ describe('Application.highvalue_block', () => {
 
     const leHook = await StateUtility.getHook(
       testContext.client,
-      testContext.alice.classicAddress
+      testContext.hook1.classicAddress
     )
     const hookDefRequest: LedgerEntryRequest = {
       command: 'ledger_entry',
@@ -544,7 +559,7 @@ describe('Application.highvalue_block', () => {
     try {
       await StateUtility.getHookState(
         testContext.client,
-        testContext.alice.classicAddress,
+        testContext.hook1.classicAddress,
         hash,
         leHookDef.HookNamespace as string
       )

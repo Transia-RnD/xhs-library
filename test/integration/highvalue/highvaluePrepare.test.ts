@@ -46,7 +46,7 @@ import {
 // HighValue.Provider: ACCEPT: ready for txn
 // HighValue.Provider: ACCEPT: could not set state - TODO
 
-describe('Application.highvaluePrepare', () => {
+describe('highvalue - Prepare', () => {
   let testContext: XrplIntegrationTestContext
 
   beforeAll(async () => {
@@ -102,7 +102,7 @@ describe('Application.highvaluePrepare', () => {
       result.meta as TransactionMetadata
     )
     expect(hookExecutions.executions[0].HookReturnString).toEqual(
-      'High value: Passing non hook on txn'
+      'High value: Passing non-Invoke txn'
     )
   })
 
@@ -167,7 +167,7 @@ describe('Application.highvaluePrepare', () => {
         tx: builtTx,
       })
     } catch (error: any) {
-      expect(error.message).toEqual('High value: Dest param missing (HDE)')
+      expect(error.message).toEqual('High value: dest param missing (HDE)')
     }
   })
 
@@ -204,7 +204,7 @@ describe('Application.highvaluePrepare', () => {
         tx: builtTx,
       })
     } catch (error: any) {
-      expect(error.message).toEqual('High value: Amount param missing (HAM)')
+      expect(error.message).toEqual('High value: amount param missing (HAM)')
     }
   })
 
@@ -253,7 +253,7 @@ describe('Application.highvaluePrepare', () => {
       result.meta as TransactionMetadata
     )
     expect(hookExecutions.executions[0].HookReturnString).toEqual(
-      'High value: Ready for txn'
+      'High value: ready for txn'
     )
 
     const leHook = await StateUtility.getHook(
@@ -273,8 +273,6 @@ describe('Application.highvaluePrepare', () => {
       Amount.from(xrpToDrops(10)),
       3
     )
-
-    console.log(hash)
 
     const hookState = await StateUtility.getHookState(
       testContext.client,
@@ -340,7 +338,7 @@ describe('Application.highvaluePrepare', () => {
       result.meta as TransactionMetadata
     )
     expect(hookExecutions.executions[0].HookReturnString).toEqual(
-      'High value: Ready for txn'
+      'High value: ready for txn'
     )
 
     const leHook = await StateUtility.getHook(
