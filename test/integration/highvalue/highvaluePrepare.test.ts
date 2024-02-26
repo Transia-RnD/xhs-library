@@ -19,7 +19,7 @@ import {
   setupClient,
   teardownClient,
   serverUrl,
-} from '@transia/hooks-toolkit/src/libs/xrpl-helpers'
+} from '@transia/hooks-toolkit/dist/npm/src/libs/xrpl-helpers'
 // src
 import {
   Xrpld,
@@ -34,7 +34,7 @@ import {
   iHookParamEntry,
   iHookParamName,
   iHookParamValue,
-} from '../../../../dist/npm/src'
+} from '@transia/hooks-toolkit/dist/npm/src'
 
 // HighValue.Provider: ACCEPT: passing non hook on txn
 // HighValue.Provider: ACCEPT: ignoring non self-invoke
@@ -52,13 +52,13 @@ describe('Application.highvaluePrepare', () => {
   afterAll(async () => teardownClient(testContext))
 
   it('highvalue prepare - passing non hook on txn', async () => {
-    const hook = createHookPayload(
-      0,
-      'highvalue_prepare',
-      'highvalue_prepare',
-      SetHookFlags.hsfOverride,
-      ['Payment']
-    )
+    const hook = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_prepare',
+      namespace: 'highvalue_prepare',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Payment'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: testContext.alice.seed,
@@ -88,13 +88,13 @@ describe('Application.highvaluePrepare', () => {
   })
 
   it('highvalue prepare - ignoring non self-Invoke', async () => {
-    const hook = createHookPayload(
-      0,
-      'highvalue_prepare',
-      'highvalue_prepare',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
+    const hook = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_prepare',
+      namespace: 'highvalue_prepare',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: testContext.alice.seed,
@@ -123,13 +123,13 @@ describe('Application.highvaluePrepare', () => {
   })
 
   it('highvalue prepare - dest param missing', async () => {
-    const hook = createHookPayload(
-      0,
-      'highvalue_prepare',
-      'highvalue_prepare',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
+    const hook = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_prepare',
+      namespace: 'highvalue_prepare',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: testContext.alice.seed,
@@ -153,13 +153,13 @@ describe('Application.highvaluePrepare', () => {
   })
 
   it('highvalue prepare - amount param missing', async () => {
-    const hook = createHookPayload(
-      0,
-      'highvalue_prepare',
-      'highvalue_prepare',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
+    const hook = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_prepare',
+      namespace: 'highvalue_prepare',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: testContext.alice.seed,
@@ -204,13 +204,13 @@ describe('Application.highvaluePrepare', () => {
       new iHookParamValue(Amount.from(xrpToDrops(10)).toHex(), true)
     )
 
-    const hook = createHookPayload(
-      0,
-      'highvalue_prepare',
-      'highvalue_prepare',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
+    const hook = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_prepare',
+      namespace: 'highvalue_prepare',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: testContext.alice.seed,
@@ -291,13 +291,13 @@ describe('Application.highvaluePrepare', () => {
       )
     )
 
-    const hook = createHookPayload(
-      0,
-      'highvalue_prepare',
-      'highvalue_prepare',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
+    const hook = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_prepare',
+      namespace: 'highvalue_prepare',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: testContext.alice.seed,

@@ -24,7 +24,7 @@ import {
   teardownClient,
   ledgerAccept,
   serverUrl,
-} from '@transia/hooks-toolkit/src/libs/xrpl-helpers'
+} from '@transia/hooks-toolkit/dist/npm/src/libs/xrpl-helpers'
 // src
 import {
   Xrpld,
@@ -39,7 +39,7 @@ import {
   iHookParamEntry,
   iHookParamName,
   iHookParamValue,
-} from '../../../../dist/npm/src'
+} from '@transia/hooks-toolkit/dist/npm/src'
 
 // HighValue.Block: ACCEPT: passing non-Payment txn
 // HighValue.Block: ACCEPT: ignoring incoming Payment
@@ -66,13 +66,13 @@ describe('Application.highvalue_block', () => {
   afterAll(async () => teardownClient(testContext))
 
   it('highvalue base - passing non hook on txn', async () => {
-    const hook = createHookPayload(
-      0,
-      'highvalue_block',
-      'highvalue_block',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
+    const hook = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_block',
+      namespace: 'highvalue_block',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: testContext.alice.seed,
@@ -101,13 +101,13 @@ describe('Application.highvalue_block', () => {
   })
 
   it('highvalue base - ignoring incoming Payment', async () => {
-    const hook = createHookPayload(
-      0,
-      'highvalue_block',
-      'highvalue_block',
-      SetHookFlags.hsfOverride,
-      ['Payment']
-    )
+    const hook = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_block',
+      namespace: 'highvalue_block',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Payment'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: testContext.alice.seed,
@@ -137,13 +137,13 @@ describe('Application.highvalue_block', () => {
   })
 
   it('highvalue base - passing outgoing Payment txn for which no threshold is set', async () => {
-    const hook = createHookPayload(
-      0,
-      'highvalue_block',
-      'highvalue_block',
-      SetHookFlags.hsfOverride,
-      ['Payment']
-    )
+    const hook = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_block',
+      namespace: 'highvalue_block',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Payment'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: testContext.alice.seed,
@@ -173,25 +173,25 @@ describe('Application.highvalue_block', () => {
   })
 
   it('highvalue base - payment exceeds threshold', async () => {
-    const hook1 = createHookPayload(
-      0,
-      'highvalue_prepare',
-      'highvalue',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
+    const hook1 = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_prepare',
+      namespace: 'highvalue',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
     const hook2param1 = new iHookParamEntry(
       new iHookParamName('HVD'),
       new iHookParamValue(Amount.from(xrpToDrops(10)).toHex(), true)
     )
-    const hook2 = createHookPayload(
-      0,
-      'highvalue_block',
-      'highvalue',
-      SetHookFlags.hsfOverride,
-      ['Payment'],
-      [hook2param1.toXrpl()]
-    )
+    const hook2 = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_block',
+      namespace: 'highvalue',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Payment'],
+      hookParams: [hook2param1.toXrpl()],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: testContext.alice.seed,
@@ -219,25 +219,25 @@ describe('Application.highvalue_block', () => {
   })
 
   it('highvalue base - too soon', async () => {
-    const hook1 = createHookPayload(
-      0,
-      'highvalue_prepare',
-      'highvalue',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
+    const hook1 = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_prepare',
+      namespace: 'highvalue',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
     const hook2param1 = new iHookParamEntry(
       new iHookParamName('HVD'),
       new iHookParamValue(floatToLEXfl('8'), true)
     )
-    const hook2 = createHookPayload(
-      0,
-      'highvalue_block',
-      'highvalue',
-      SetHookFlags.hsfOverride,
-      ['Payment'],
-      [hook2param1.toXrpl()]
-    )
+    const hook2 = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_block',
+      namespace: 'highvalue',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Payment'],
+      hookParams: [hook2param1.toXrpl()],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: testContext.alice.seed,
@@ -295,25 +295,25 @@ describe('Application.highvalue_block', () => {
   })
 
   it('highvalue base xrp - passing prepared high value txn', async () => {
-    const hook1 = createHookPayload(
-      0,
-      'highvalue_prepare',
-      'highvalue',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
+    const hook1 = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_prepare',
+      namespace: 'highvalue',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
     const hook2param1 = new iHookParamEntry(
       new iHookParamName('HVD'),
       new iHookParamValue(floatToLEXfl('10'), true)
     )
-    const hook2 = createHookPayload(
-      0,
-      'highvalue_block',
-      'highvalue',
-      SetHookFlags.hsfOverride,
-      ['Payment'],
-      [hook2param1.toXrpl()]
-    )
+    const hook2 = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_block',
+      namespace: 'highvalue',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Payment'],
+      hookParams: [hook2param1.toXrpl()],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: testContext.alice.seed,
@@ -402,13 +402,13 @@ describe('Application.highvalue_block', () => {
   })
 
   it('highvalue base token - passing prepared high value txn', async () => {
-    const hook1 = createHookPayload(
-      0,
-      'highvalue_prepare',
-      'highvalue',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
+    const hook1 = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_prepare',
+      namespace: 'highvalue',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
     const hook2param1 = new iHookParamEntry(
       new iHookParamName('HVT'),
       new iHookParamValue(
@@ -418,14 +418,14 @@ describe('Application.highvalue_block', () => {
         true
       )
     )
-    const hook2 = createHookPayload(
-      0,
-      'highvalue_block',
-      'highvalue',
-      SetHookFlags.hsfOverride,
-      ['Payment'],
-      [hook2param1.toXrpl()]
-    )
+    const hook2 = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_block',
+      namespace: 'highvalue',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Payment'],
+      hookParams: [hook2param1.toXrpl()],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: testContext.alice.seed,
@@ -531,25 +531,25 @@ describe('Application.highvalue_block', () => {
   })
 
   it('highvalue base - passing outgoing Payment less than threshold', async () => {
-    const hook1 = createHookPayload(
-      0,
-      'highvalue_prepare',
-      'highvalue',
-      SetHookFlags.hsfOverride,
-      ['Invoke']
-    )
+    const hook1 = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_prepare',
+      namespace: 'highvalue',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
     const hook2param1 = new iHookParamEntry(
       new iHookParamName('HVD'),
       new iHookParamValue(floatToLEXfl('10'), true)
     )
-    const hook2 = createHookPayload(
-      0,
-      'highvalue_block',
-      'highvalue',
-      SetHookFlags.hsfOverride,
-      ['Payment'],
-      [hook2param1.toXrpl()]
-    )
+    const hook2 = createHookPayload({
+      version: 0,
+      createFile: 'highvalue_block',
+      namespace: 'highvalue',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Payment'],
+      hookParams: [hook2param1.toXrpl()],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: testContext.alice.seed,
