@@ -104,7 +104,7 @@ describe('redirect', () => {
 
   it('redirect - success', async () => {
     const hookWallet1 = testContext.hook1
-    const hookWallet2 = testContext.hook2
+    const aliceWallet = testContext.alice
 
     const amount: IssuedCurrencyAmount = {
       issuer: testContext.ic.issuer as string,
@@ -113,13 +113,13 @@ describe('redirect', () => {
     }
     const builtTx1: Payment = {
       TransactionType: 'Payment',
-      Account: hookWallet1.classicAddress,
-      Destination: hookWallet2.classicAddress,
+      Account: aliceWallet.classicAddress,
+      Destination: hookWallet1.classicAddress,
       Amount: amount,
     }
 
     const result1 = await Xrpld.submit(testContext.client, {
-      wallet: hookWallet1,
+      wallet: aliceWallet,
       tx: builtTx1,
     })
     const hookExecutions1 = await ExecutionUtility.getHookExecutionsFromMeta(
