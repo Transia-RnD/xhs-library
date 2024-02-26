@@ -309,9 +309,23 @@ int64_t hook(uint32_t r)
             slot_subfield(10, sfBalance, 11);
             if (slot_size(11) != 48)
                 NOPE("Funds: Could not fetch trustline balance.");
+
+            uint8_t low_limit[48];
+            if (slot_subfield(10, sfLowLimit, 13) != 13)
+                NOPE("Funds: Could not slot subfield `sfLowLimit`");
+
+            if (slot(SVAR(low_limit), 13) != 48)
+                NOPE("Funds: Could not slot `sfLowLimit`");
     
             int64_t xfl_bal = slot_float(11);
 
+            // balance is negative and issuer is not low
+            if (float_sign(xfl_bal) && !BUFFER_EQUAL_20(OUTISS, low_limit + 28))
+            {
+                NOPE("Funds: Insane balance on trustline.");
+            }
+
+            xfl_bal = float_sign(xfl_bal) ? float_negate(xfl_bal) : xfl_bal;
             if (xfl_bal <= 0 || !float_compare(xfl_bal, 0, COMPARE_GREATER))
                 NOPE("Funds: Insane balance on trustline.");
 
@@ -326,7 +340,7 @@ int64_t hook(uint32_t r)
                 if (time > sig_exp)
                     NOPE("Funds: Ticket has expired.");
 
-                if (!BUFFER_EQUAL_20(sig_acc, OTXNACC))
+                if (!BUFFER_EQUAL_20(sig_acc, stl))
                     NOPE("Funds: Wrong account for ticket.");
 
                 // check the nonce

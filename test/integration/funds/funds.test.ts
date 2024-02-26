@@ -26,9 +26,13 @@ import {
   hexNamespace,
   iHook,
   clearAllHooksV3,
+  flipHex,
+  StateUtility,
+  padHexString,
 } from '@transia/hooks-toolkit'
 import {
   currencyToHex,
+  hexToUInt64,
   uint32ToHex,
   xflToHex,
   xrpAddressToHex,
@@ -45,7 +49,7 @@ describe('funds - Success Group', () => {
   beforeAll(async () => {
     testContext = await setupClient(serverUrl)
 
-    const hookWallet = testContext.hook1
+    const hookWallet = testContext.hook4
     const adminWallet = testContext.frank
     const settleWallet = testContext.frank
     const swKey = testContext.grace.publicKey
@@ -91,7 +95,7 @@ describe('funds - Success Group', () => {
     } as SetHookParams)
   })
   afterAll(async () => {
-    const hookWallet = testContext.hook1
+    const hookWallet = testContext.hook4
     await clearAllHooksV3({
       client: testContext.client,
       seed: hookWallet.seed,
@@ -109,7 +113,7 @@ describe('funds - Success Group', () => {
   })
 
   it('operation - initialize', async () => {
-    const hookWallet = testContext.hook1
+    const hookWallet = testContext.hook4
     const aliceWallet = testContext.alice
     const otxnParam1 = new iHookParamEntry(
       new iHookParamName('OP'),
@@ -140,7 +144,7 @@ describe('funds - Success Group', () => {
   })
 
   it('operation - pause/unpause', async () => {
-    const hookWallet = testContext.hook1
+    const hookWallet = testContext.hook4
     const adminWallet = testContext.frank
     const otxn1Param1 = new iHookParamEntry(
       new iHookParamName('OP'),
@@ -186,7 +190,7 @@ describe('funds - Success Group', () => {
     )
   })
   it('operation - user deposit', async () => {
-    const hookWallet = testContext.hook1
+    const hookWallet = testContext.hook4
     const aliceWallet = testContext.alice
 
     const amount: IssuedCurrencyAmount = {
@@ -223,7 +227,7 @@ describe('funds - Success Group', () => {
   })
 
   it('operation - creditcard cleared', async () => {
-    const hookWallet = testContext.hook1
+    const hookWallet = testContext.hook4
     const adminWallet = testContext.frank
     const settleWallet = testContext.frank
     const privateKey = testContext.grace.privateKey
@@ -277,19 +281,21 @@ describe('funds - Success Group', () => {
   })
 
   it('operation - user withdrawal', async () => {
-    const hookWallet = testContext.hook1
+    const hookWallet = testContext.hook4
     const userWallet = testContext.alice
     const settleWallet = testContext.frank
     const privateKey = testContext.grace.privateKey
 
     const amount = 10
-    const expiration = unixTimeToRippleTime(Date.now() + 3600)
+    const expiration = unixTimeToRippleTime(Date.now() + 3600000)
+    console.log(expiration)
+
     const sequence = 0
     const hex =
       xrpAddressToHex(settleWallet.classicAddress) +
       xflToHex(amount) +
-      uint32ToHex(expiration) +
-      uint32ToHex(sequence)
+      flipHex(uint32ToHex(expiration)) +
+      flipHex(uint32ToHex(sequence))
 
     const signature = sign(hex, privateKey)
     expect(verify(hex, signature, testContext.grace.publicKey)).toBe(true)
@@ -321,8 +327,196 @@ describe('funds - Success Group', () => {
       'Funds: Emitted withdrawal.'
     )
   })
+  it('operation - user withdrawal - fail (signature)', async () => {
+    const hookWallet = testContext.hook4
+    const userWallet = testContext.alice
+    const settleWallet = testContext.frank
+    const privateKey = testContext.alice.privateKey
+
+    const amount = 10
+    const expiration = unixTimeToRippleTime(Date.now() + 3600000)
+    const state = await StateUtility.getHookState(
+      testContext.client,
+      hookWallet.classicAddress,
+      padHexString(xrpAddressToHex(settleWallet.classicAddress)),
+      hexNamespace('funds')
+    )
+    const sequence = hexToUInt64(flipHex(state.HookStateData))
+    const hex =
+      xrpAddressToHex(settleWallet.classicAddress) +
+      xflToHex(amount) +
+      flipHex(uint32ToHex(expiration)) +
+      flipHex(uint32ToHex(Number(sequence.toString())))
+
+    const signature = sign(hex, privateKey)
+    expect(verify(hex, signature, testContext.alice.publicKey)).toBe(true)
+
+    const otxnParam1 = new iHookParamEntry(
+      new iHookParamName('OP'),
+      new iHookParamValue('W')
+    )
+    const otxnParam2 = new iHookParamEntry(
+      new iHookParamName('SIG'),
+      new iHookParamValue(hex + signature, true)
+    )
+    const builtTx: Invoke = {
+      TransactionType: 'Invoke',
+      Account: userWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      HookParameters: [otxnParam1.toXrpl(), otxnParam2.toXrpl()],
+    }
+    try {
+      await Xrpld.submit(testContext.client, {
+        wallet: userWallet,
+        tx: builtTx,
+      })
+    } catch (error: any) {
+      expect(error.message).toEqual('Funds: Signature verification failed.')
+    }
+  })
+  it('operation - user withdrawal - fail (admin)', async () => {
+    const hookWallet = testContext.hook4
+    const userWallet = testContext.alice
+    const settleWallet = testContext.frank
+    const privateKey = testContext.grace.privateKey
+
+    const amount = 10
+    const expiration = unixTimeToRippleTime(Date.now() + 3600000)
+    const state = await StateUtility.getHookState(
+      testContext.client,
+      hookWallet.classicAddress,
+      padHexString(xrpAddressToHex(settleWallet.classicAddress)),
+      hexNamespace('funds')
+    )
+    const sequence = hexToUInt64(flipHex(state.HookStateData))
+    const hex =
+      xrpAddressToHex(userWallet.classicAddress) +
+      xflToHex(amount) +
+      flipHex(uint32ToHex(expiration)) +
+      flipHex(uint32ToHex(Number(sequence.toString())))
+
+    const signature = sign(hex, privateKey)
+    expect(verify(hex, signature, testContext.grace.publicKey)).toBe(true)
+
+    const otxnParam1 = new iHookParamEntry(
+      new iHookParamName('OP'),
+      new iHookParamValue('W')
+    )
+    const otxnParam2 = new iHookParamEntry(
+      new iHookParamName('SIG'),
+      new iHookParamValue(hex + signature, true)
+    )
+    const builtTx: Invoke = {
+      TransactionType: 'Invoke',
+      Account: userWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      HookParameters: [otxnParam1.toXrpl(), otxnParam2.toXrpl()],
+    }
+    try {
+      await Xrpld.submit(testContext.client, {
+        wallet: userWallet,
+        tx: builtTx,
+      })
+    } catch (error: any) {
+      expect(error.message).toEqual('Funds: Wrong account for ticket.')
+    }
+  })
+  it('operation - user withdrawal - fail (expiration)', async () => {
+    const hookWallet = testContext.hook4
+    const userWallet = testContext.alice
+    const settleWallet = testContext.frank
+    const privateKey = testContext.grace.privateKey
+
+    const amount = 10
+    const expiration = unixTimeToRippleTime(Date.now())
+    const state = await StateUtility.getHookState(
+      testContext.client,
+      hookWallet.classicAddress,
+      padHexString(xrpAddressToHex(settleWallet.classicAddress)),
+      hexNamespace('funds')
+    )
+    const sequence = hexToUInt64(flipHex(state.HookStateData))
+    const hex =
+      xrpAddressToHex(settleWallet.classicAddress) +
+      xflToHex(amount) +
+      flipHex(uint32ToHex(expiration)) +
+      flipHex(uint32ToHex(Number(sequence.toString())))
+
+    const signature = sign(hex, privateKey)
+    expect(verify(hex, signature, testContext.grace.publicKey)).toBe(true)
+
+    const otxnParam1 = new iHookParamEntry(
+      new iHookParamName('OP'),
+      new iHookParamValue('W')
+    )
+    const otxnParam2 = new iHookParamEntry(
+      new iHookParamName('SIG'),
+      new iHookParamValue(hex + signature, true)
+    )
+    const builtTx: Invoke = {
+      TransactionType: 'Invoke',
+      Account: userWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      HookParameters: [otxnParam1.toXrpl(), otxnParam2.toXrpl()],
+    }
+    try {
+      await Xrpld.submit(testContext.client, {
+        wallet: userWallet,
+        tx: builtTx,
+      })
+    } catch (error: any) {
+      expect(error.message).toEqual('Funds: Ticket has expired.')
+    }
+  })
+  it('operation - user withdrawal - fail (nonce)', async () => {
+    const hookWallet = testContext.hook4
+    const userWallet = testContext.alice
+    const settleWallet = testContext.frank
+    const privateKey = testContext.grace.privateKey
+
+    const amount = 10
+    const expiration = unixTimeToRippleTime(Date.now() + 3600000)
+    const state = await StateUtility.getHookState(
+      testContext.client,
+      hookWallet.classicAddress,
+      padHexString(xrpAddressToHex(settleWallet.classicAddress)),
+      hexNamespace('funds')
+    )
+    const sequence = hexToUInt64(flipHex(state.HookStateData)) + BigInt(1)
+    const hex =
+      xrpAddressToHex(settleWallet.classicAddress) +
+      xflToHex(amount) +
+      flipHex(uint32ToHex(expiration)) +
+      flipHex(uint32ToHex(Number(sequence.toString())))
+
+    const signature = sign(hex, privateKey)
+    expect(verify(hex, signature, testContext.grace.publicKey)).toBe(true)
+
+    const otxnParam1 = new iHookParamEntry(
+      new iHookParamName('OP'),
+      new iHookParamValue('W')
+    )
+    const otxnParam2 = new iHookParamEntry(
+      new iHookParamName('SIG'),
+      new iHookParamValue(hex + signature, true)
+    )
+    const builtTx: Invoke = {
+      TransactionType: 'Invoke',
+      Account: userWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      HookParameters: [otxnParam1.toXrpl(), otxnParam2.toXrpl()],
+    }
+    try {
+      await Xrpld.submit(testContext.client, {
+        wallet: userWallet,
+        tx: builtTx,
+      })
+    } catch (error: any) {
+      expect(error.message).toEqual('Funds: Nonce out of sequence.')
+    }
+  })
   it('operation - creditcard refund', async () => {
-    const hookWallet = testContext.hook1
+    const hookWallet = testContext.hook4
     const adminWallet = testContext.frank
 
     const amount: IssuedCurrencyAmount = {
