@@ -47,7 +47,7 @@ describe('redirect', () => {
     )
     await pay(
       testContext.client,
-      testContext.ic.set(50000),
+      testContext.ic.set(1000),
       testContext.gw,
       ...[testContext.hook1.classicAddress]
     )
