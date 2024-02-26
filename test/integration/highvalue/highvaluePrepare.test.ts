@@ -34,6 +34,9 @@ import {
   iHookParamEntry,
   iHookParamName,
   iHookParamValue,
+  hexNamespace,
+  iHook,
+  clearAllHooksV3,
 } from '@transia/hooks-toolkit/dist/npm/src'
 
 // HighValue.Provider: ACCEPT: passing non hook on txn
@@ -49,7 +52,23 @@ describe('Application.highvaluePrepare', () => {
   beforeAll(async () => {
     testContext = await setupClient(serverUrl)
   })
-  afterAll(async () => teardownClient(testContext))
+  afterAll(async () => {
+    const hookWallet = testContext.hook1
+    await clearAllHooksV3({
+      client: testContext.client,
+      seed: hookWallet.seed,
+    } as SetHookParams)
+    const clearHook = {
+      Flags: SetHookFlags.hsfNSDelete,
+      HookNamespace: hexNamespace('highvalue_prepare'),
+    } as iHook
+    await setHooksV3({
+      client: testContext.client,
+      seed: hookWallet.seed,
+      hooks: [{ Hook: clearHook }],
+    } as SetHookParams)
+    teardownClient(testContext)
+  })
 
   it('highvalue prepare - passing non hook on txn', async () => {
     const hook = createHookPayload({
@@ -61,17 +80,17 @@ describe('Application.highvaluePrepare', () => {
     })
     await setHooksV3({
       client: testContext.client,
-      seed: testContext.alice.seed,
+      seed: testContext.hook1.seed,
       hooks: [{ Hook: hook }],
     } as SetHookParams)
 
     // PAYMENT IN
-    const aliceWallet = testContext.alice
+    const hookWallet = testContext.hook1
     const bobWallet = testContext.bob
     const builtTx: Payment = {
       TransactionType: 'Payment',
       Account: bobWallet.classicAddress,
-      Destination: aliceWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
       Amount: xrpToDrops(1),
     }
     const result = await Xrpld.submit(testContext.client, {
@@ -97,17 +116,17 @@ describe('Application.highvaluePrepare', () => {
     })
     await setHooksV3({
       client: testContext.client,
-      seed: testContext.alice.seed,
+      seed: testContext.hook1.seed,
       hooks: [{ Hook: hook }],
     } as SetHookParams)
 
     // INVOKE IN
-    const aliceWallet = testContext.alice
+    const hookWallet = testContext.hook1
     const bobWallet = testContext.bob
     const builtTx: Invoke = {
       TransactionType: 'Invoke',
       Account: bobWallet.classicAddress,
-      Destination: aliceWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
     }
     const result = await Xrpld.submit(testContext.client, {
       wallet: bobWallet,
@@ -132,19 +151,19 @@ describe('Application.highvaluePrepare', () => {
     })
     await setHooksV3({
       client: testContext.client,
-      seed: testContext.alice.seed,
+      seed: testContext.hook1.seed,
       hooks: [{ Hook: hook }],
     } as SetHookParams)
 
     // INVOKE IN
-    const aliceWallet = testContext.alice
+    const hookWallet = testContext.hook1
     const builtTx: Invoke = {
       TransactionType: 'Invoke',
-      Account: aliceWallet.classicAddress,
+      Account: hookWallet.classicAddress,
     }
     try {
       await Xrpld.submit(testContext.client, {
-        wallet: aliceWallet,
+        wallet: hookWallet,
         tx: builtTx,
       })
     } catch (error: any) {
@@ -162,7 +181,7 @@ describe('Application.highvaluePrepare', () => {
     })
     await setHooksV3({
       client: testContext.client,
-      seed: testContext.alice.seed,
+      seed: testContext.hook1.seed,
       hooks: [{ Hook: hook }],
     } as SetHookParams)
 
@@ -174,14 +193,14 @@ describe('Application.highvaluePrepare', () => {
       )
 
       // INVOKE IN
-      const aliceWallet = testContext.alice
+      const hookWallet = testContext.hook1
       const builtTx: Invoke = {
         TransactionType: 'Invoke',
-        Account: aliceWallet.classicAddress,
+        Account: hookWallet.classicAddress,
         HookParameters: [txParam1.toXrpl()],
       }
       await Xrpld.submit(testContext.client, {
-        wallet: aliceWallet,
+        wallet: hookWallet,
         tx: builtTx,
       })
     } catch (error: any) {
@@ -213,19 +232,19 @@ describe('Application.highvaluePrepare', () => {
     })
     await setHooksV3({
       client: testContext.client,
-      seed: testContext.alice.seed,
+      seed: testContext.hook1.seed,
       hooks: [{ Hook: hook }],
     } as SetHookParams)
 
     // INVOKE OUT
-    const aliceWallet = testContext.alice
+    const hookWallet = testContext.hook1
     const builtTx: Invoke = {
       TransactionType: 'Invoke',
-      Account: aliceWallet.classicAddress,
+      Account: hookWallet.classicAddress,
       HookParameters: [param1.toXrpl(), param2.toXrpl(), param3.toXrpl()],
     }
     const result = await Xrpld.submit(testContext.client, {
-      wallet: aliceWallet,
+      wallet: hookWallet,
       tx: builtTx,
     })
 
@@ -239,7 +258,7 @@ describe('Application.highvaluePrepare', () => {
 
     const leHook = await StateUtility.getHook(
       testContext.client,
-      testContext.alice.classicAddress
+      testContext.hook1.classicAddress
     )
     const hookDefRequest: LedgerEntryRequest = {
       command: 'ledger_entry',
@@ -259,7 +278,7 @@ describe('Application.highvaluePrepare', () => {
 
     const hookState = await StateUtility.getHookState(
       testContext.client,
-      testContext.alice.classicAddress,
+      testContext.hook1.classicAddress,
       hash,
       leHookDef.HookNamespace as string
     )
@@ -300,19 +319,19 @@ describe('Application.highvaluePrepare', () => {
     })
     await setHooksV3({
       client: testContext.client,
-      seed: testContext.alice.seed,
+      seed: testContext.hook1.seed,
       hooks: [{ Hook: hook }],
     } as SetHookParams)
 
     // INVOKE OUT
-    const aliceWallet = testContext.alice
+    const hookWallet = testContext.hook1
     const builtTx: Invoke = {
       TransactionType: 'Invoke',
-      Account: aliceWallet.classicAddress,
+      Account: hookWallet.classicAddress,
       HookParameters: [param1.toXrpl(), param2.toXrpl(), param3.toXrpl()],
     }
     const result = await Xrpld.submit(testContext.client, {
-      wallet: aliceWallet,
+      wallet: hookWallet,
       tx: builtTx,
     })
 
@@ -326,7 +345,7 @@ describe('Application.highvaluePrepare', () => {
 
     const leHook = await StateUtility.getHook(
       testContext.client,
-      testContext.alice.classicAddress
+      testContext.hook1.classicAddress
     )
     const hookDefRequest: LedgerEntryRequest = {
       command: 'ledger_entry',
@@ -347,7 +366,7 @@ describe('Application.highvaluePrepare', () => {
     )
     const hookState = await StateUtility.getHookState(
       testContext.client,
-      testContext.alice.classicAddress,
+      testContext.hook1.classicAddress,
       hash,
       leHookDef.HookNamespace as string
     )

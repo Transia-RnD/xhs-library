@@ -39,6 +39,9 @@ import {
   iHookParamEntry,
   iHookParamName,
   iHookParamValue,
+  clearAllHooksV3,
+  hexNamespace,
+  iHook,
 } from '@transia/hooks-toolkit/dist/npm/src'
 
 // HighValue.Block: ACCEPT: passing non-Payment txn
@@ -63,29 +66,49 @@ describe('Application.highvalue_block', () => {
   beforeAll(async () => {
     testContext = await setupClient(serverUrl)
   })
-  afterAll(async () => teardownClient(testContext))
+  afterAll(async () => {
+    const hookWallet = testContext.hook1
+    await clearAllHooksV3({
+      client: testContext.client,
+      seed: hookWallet.seed,
+    } as SetHookParams)
+    const clearHook1 = {
+      Flags: SetHookFlags.hsfNSDelete,
+      HookNamespace: hexNamespace('highvalue'),
+    } as iHook
+    const clearHook2 = {
+      Flags: SetHookFlags.hsfNSDelete,
+      HookNamespace: hexNamespace('highvalue'),
+    } as iHook
+    await setHooksV3({
+      client: testContext.client,
+      seed: hookWallet.seed,
+      hooks: [{ Hook: clearHook1 }, { Hook: clearHook2 }],
+    } as SetHookParams)
+    teardownClient(testContext)
+  })
 
   it('highvalue base - passing non hook on txn', async () => {
     const hook = createHookPayload({
       version: 0,
       createFile: 'highvalue_block',
-      namespace: 'highvalue_block',
+      namespace: 'highvalue',
       flags: SetHookFlags.hsfOverride,
       hookOnArray: ['Invoke'],
     })
     await setHooksV3({
       client: testContext.client,
-      seed: testContext.alice.seed,
+      seed: testContext.hook1.seed,
       hooks: [{ Hook: hook }],
     } as SetHookParams)
 
     // INVOKE IN
-    const aliceWallet = testContext.alice
+    const hookWallet = testContext.hook1
     const bobWallet = testContext.bob
     const builtTx: Invoke = {
       TransactionType: 'Invoke',
       Account: bobWallet.classicAddress,
-      Destination: aliceWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
     }
     const result = await Xrpld.submit(testContext.client, {
       wallet: bobWallet,
@@ -104,23 +127,23 @@ describe('Application.highvalue_block', () => {
     const hook = createHookPayload({
       version: 0,
       createFile: 'highvalue_block',
-      namespace: 'highvalue_block',
+      namespace: 'highvalue',
       flags: SetHookFlags.hsfOverride,
       hookOnArray: ['Payment'],
     })
     await setHooksV3({
       client: testContext.client,
-      seed: testContext.alice.seed,
+      seed: testContext.hook1.seed,
       hooks: [{ Hook: hook }],
     } as SetHookParams)
 
     // PAYMENT IN
-    const aliceWallet = testContext.alice
+    const hookWallet = testContext.hook1
     const bobWallet = testContext.bob
     const builtTx: Payment = {
       TransactionType: 'Payment',
       Account: bobWallet.classicAddress,
-      Destination: aliceWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
       Amount: xrpToDrops(1),
     }
     const result = await Xrpld.submit(testContext.client, {
@@ -140,27 +163,27 @@ describe('Application.highvalue_block', () => {
     const hook = createHookPayload({
       version: 0,
       createFile: 'highvalue_block',
-      namespace: 'highvalue_block',
+      namespace: 'highvalue',
       flags: SetHookFlags.hsfOverride,
       hookOnArray: ['Payment'],
     })
     await setHooksV3({
       client: testContext.client,
-      seed: testContext.alice.seed,
+      seed: testContext.hook1.seed,
       hooks: [{ Hook: hook }],
     } as SetHookParams)
 
     // PAYMENT OUT
-    const aliceWallet = testContext.alice
+    const hookWallet = testContext.hook1
     const bobWallet = testContext.bob
     const builtTx: Payment = {
       TransactionType: 'Payment',
-      Account: aliceWallet.classicAddress,
+      Account: hookWallet.classicAddress,
       Destination: bobWallet.classicAddress,
       Amount: xrpToDrops(1),
     }
     const result = await Xrpld.submit(testContext.client, {
-      wallet: aliceWallet,
+      wallet: hookWallet,
       tx: builtTx,
     })
     const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
@@ -194,23 +217,23 @@ describe('Application.highvalue_block', () => {
     })
     await setHooksV3({
       client: testContext.client,
-      seed: testContext.alice.seed,
+      seed: testContext.hook1.seed,
       hooks: [{ Hook: hook1 }, { Hook: hook2 }],
     } as SetHookParams)
 
-    const aliceWallet = testContext.alice
+    const hookWallet = testContext.hook1
     const bobWallet = testContext.bob
 
     try {
       // PAYMENT OUT - Hook 2: Tx 1
       const built2Tx1: Payment = {
         TransactionType: 'Payment',
-        Account: aliceWallet.classicAddress,
+        Account: hookWallet.classicAddress,
         Destination: bobWallet.classicAddress,
         Amount: xrpToDrops(11),
       }
       await Xrpld.submit(testContext.client, {
-        wallet: aliceWallet,
+        wallet: hookWallet,
         tx: built2Tx1,
       })
     } catch (error: any) {
@@ -240,11 +263,11 @@ describe('Application.highvalue_block', () => {
     })
     await setHooksV3({
       client: testContext.client,
-      seed: testContext.alice.seed,
+      seed: testContext.hook1.seed,
       hooks: [{ Hook: hook1 }, { Hook: hook2 }],
     } as SetHookParams)
 
-    const aliceWallet = testContext.alice
+    const hookWallet = testContext.hook1
     const bobWallet = testContext.bob
 
     // INVOKE OUT - Hook 1: Tx 1
@@ -263,7 +286,7 @@ describe('Application.highvalue_block', () => {
     )
     const built1Tx1: Invoke = {
       TransactionType: 'Invoke',
-      Account: aliceWallet.classicAddress,
+      Account: hookWallet.classicAddress,
       HookParameters: [
         tx1param1.toXrpl(),
         // tx1param2.toXrpl(),
@@ -271,20 +294,20 @@ describe('Application.highvalue_block', () => {
       ],
     }
     await Xrpld.submit(testContext.client, {
-      wallet: aliceWallet,
+      wallet: hookWallet,
       tx: built1Tx1,
     })
 
     // PAYMENT OUT - Hook 2: Tx 1
     const built2Tx1: Payment = {
       TransactionType: 'Payment',
-      Account: aliceWallet.classicAddress,
+      Account: hookWallet.classicAddress,
       Destination: bobWallet.classicAddress,
       Amount: xrpToDrops(9),
     }
     try {
       await Xrpld.submit(testContext.client, {
-        wallet: aliceWallet,
+        wallet: hookWallet,
         tx: built2Tx1,
       })
     } catch (error: any) {
@@ -316,11 +339,11 @@ describe('Application.highvalue_block', () => {
     })
     await setHooksV3({
       client: testContext.client,
-      seed: testContext.alice.seed,
+      seed: testContext.hook1.seed,
       hooks: [{ Hook: hook1 }, { Hook: hook2 }],
     } as SetHookParams)
 
-    const aliceWallet = testContext.alice
+    const hookWallet = testContext.hook1
     const bobWallet = testContext.bob
 
     // INVOKE OUT - Hook 1: Tx 1
@@ -339,7 +362,7 @@ describe('Application.highvalue_block', () => {
     )
     const built1Tx1: Invoke = {
       TransactionType: 'Invoke',
-      Account: aliceWallet.classicAddress,
+      Account: hookWallet.classicAddress,
       HookParameters: [
         tx1param1.toXrpl(),
         // tx1param2.toXrpl(),
@@ -347,7 +370,7 @@ describe('Application.highvalue_block', () => {
       ],
     }
     await Xrpld.submit(testContext.client, {
-      wallet: aliceWallet,
+      wallet: hookWallet,
       tx: built1Tx1,
     })
 
@@ -356,12 +379,12 @@ describe('Application.highvalue_block', () => {
     // PAYMENT OUT - Hook 2: Tx 1
     const built2Tx1: Payment = {
       TransactionType: 'Payment',
-      Account: aliceWallet.classicAddress,
+      Account: hookWallet.classicAddress,
       Destination: bobWallet.classicAddress,
       Amount: xrpToDrops(11),
     }
     const result = await Xrpld.submit(testContext.client, {
-      wallet: aliceWallet,
+      wallet: hookWallet,
       tx: built2Tx1,
     })
     const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
@@ -428,11 +451,11 @@ describe('Application.highvalue_block', () => {
     })
     await setHooksV3({
       client: testContext.client,
-      seed: testContext.alice.seed,
+      seed: testContext.hook1.seed,
       hooks: [{ Hook: hook1 }, { Hook: hook2 }],
     } as SetHookParams)
 
-    const aliceWallet = testContext.alice
+    const hookWallet = testContext.hook1
     const bobWallet = testContext.bob
 
     // INVOKE OUT - Hook 1: Tx 1
@@ -459,7 +482,7 @@ describe('Application.highvalue_block', () => {
     )
     const built1Tx1: Invoke = {
       TransactionType: 'Invoke',
-      Account: aliceWallet.classicAddress,
+      Account: hookWallet.classicAddress,
       HookParameters: [
         tx1param1.toXrpl(),
         // tx1param2.toXrpl(),
@@ -467,7 +490,7 @@ describe('Application.highvalue_block', () => {
       ],
     }
     await Xrpld.submit(testContext.client, {
-      wallet: aliceWallet,
+      wallet: hookWallet,
       tx: built1Tx1,
     })
 
@@ -482,12 +505,12 @@ describe('Application.highvalue_block', () => {
     // PAYMENT OUT - Hook 2: Tx 1
     const built2Tx1: Payment = {
       TransactionType: 'Payment',
-      Account: aliceWallet.classicAddress,
+      Account: hookWallet.classicAddress,
       Destination: bobWallet.classicAddress,
       Amount: amount,
     }
     const result = await Xrpld.submit(testContext.client, {
-      wallet: aliceWallet,
+      wallet: hookWallet,
       tx: built2Tx1,
     })
     const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
@@ -552,11 +575,11 @@ describe('Application.highvalue_block', () => {
     })
     await setHooksV3({
       client: testContext.client,
-      seed: testContext.alice.seed,
+      seed: testContext.hook1.seed,
       hooks: [{ Hook: hook1 }, { Hook: hook2 }],
     } as SetHookParams)
 
-    const aliceWallet = testContext.alice
+    const hookWallet = testContext.hook1
     const bobWallet = testContext.bob
 
     // INVOKE OUT - Hook 1: Tx 1
@@ -575,7 +598,7 @@ describe('Application.highvalue_block', () => {
     )
     const built1Tx1: Invoke = {
       TransactionType: 'Invoke',
-      Account: aliceWallet.classicAddress,
+      Account: hookWallet.classicAddress,
       HookParameters: [
         tx1param1.toXrpl(),
         tx1param2.toXrpl(),
@@ -583,19 +606,19 @@ describe('Application.highvalue_block', () => {
       ],
     }
     await Xrpld.submit(testContext.client, {
-      wallet: aliceWallet,
+      wallet: hookWallet,
       tx: built1Tx1,
     })
 
     // PAYMENT OUT - Hook 2: Tx 1
     const built2Tx1: Payment = {
       TransactionType: 'Payment',
-      Account: aliceWallet.classicAddress,
+      Account: hookWallet.classicAddress,
       Destination: bobWallet.classicAddress,
       Amount: xrpToDrops(9),
     }
     const result = await Xrpld.submit(testContext.client, {
-      wallet: aliceWallet,
+      wallet: hookWallet,
       tx: built2Tx1,
     })
     const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
