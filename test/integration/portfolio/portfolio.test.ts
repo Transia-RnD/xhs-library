@@ -25,10 +25,10 @@ import {
   setHooksV3,
   createHookPayload,
   ExecutionUtility,
-  // hexNamespace,
-  // clearHookStateV3,
-  // clearAllHooksV3,
-  // iHook,
+  hexNamespace,
+  clearHookStateV3,
+  clearAllHooksV3,
+  iHook,
   iHookParamEntry,
   iHookParamName,
   iHookParamValue,
@@ -82,20 +82,20 @@ describe('portfolio', () => {
     } as SetHookParams)
   })
   afterAll(async () => {
-    // const clearHook = {
-    //   Flags: SetHookFlags.hsfNSDelete,
-    //   HookNamespace: hexNamespace('portfolio'),
-    // } as iHook
-    // await clearHookStateV3({
-    //   client: testContext.client,
-    //   seed: testContext.hook1.seed,
-    //   hooks: [{ Hook: clearHook }],
-    // } as SetHookParams)
+    const clearHook = {
+      Flags: SetHookFlags.hsfNSDelete,
+      HookNamespace: hexNamespace('portfolio'),
+    } as iHook
+    await clearHookStateV3({
+      client: testContext.client,
+      seed: testContext.hook1.seed,
+      hooks: [{ Hook: clearHook }],
+    } as SetHookParams)
 
-    // await clearAllHooksV3({
-    //   client: testContext.client,
-    //   seed: testContext.hook1.seed,
-    // } as SetHookParams)
+    await clearAllHooksV3({
+      client: testContext.client,
+      seed: testContext.hook1.seed,
+    } as SetHookParams)
     teardownClient(testContext)
   })
 
