@@ -160,40 +160,5 @@ describe('portfolio', () => {
     )
 
     await close(testContext.client)
-
-    // const client = new XrplClient(serverUrl)
-    // const sellLiquidity = await getSellLiquidity(
-    //   client,
-    //   'XYZ',
-    //   testContext.gw.classicAddress,
-    //   1
-    // )
-    // expect(sellLiquidity.rate).toBe(100)
-    // const buyLiquidity = await getBuyLiquidity(
-    //   client,
-    //   'XYZ',
-    //   testContext.gw.classicAddress,
-    //   1
-    // )
-    // expect(buyLiquidity.rate).toBe(90.0000000000001)
-
-    // const XYZ = new IC(testContext.gw.classicAddress, 'XYZ', 100)
-    // await buy(testContext.client, XYZ.set(1), testContext.gw, 105)
-    // await close(testContext.client)
-    // const sellLiquidity1 = await getSellLiquidity(
-    //   client,
-    //   'XYZ',
-    //   testContext.gw.classicAddress,
-    //   1
-    // )
-    // expect(sellLiquidity1.rate).toBe(105.25)
-    // const buyLiquidity1 = await getBuyLiquidity(
-    //   client,
-    //   'XYZ',
-    //   testContext.gw.classicAddress,
-    //   1
-    // )
-    // expect(buyLiquidity1.rate).toBe(94.5)
-    // client.destroy()
   })
 })
