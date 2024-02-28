@@ -51,7 +51,7 @@ The router hook logic is implemented in `router_base.c`. It reads the hook posit
 To debug the router hook, you can monitor the `xrpld` logs for `HookTrace` entries:
 
 ```shell
-tail -f xrpld/log/debug.log | grep HookTrace
+tail -f xahau/log/debug.log | grep HookTrace
 ```
 
 ## Contributing
