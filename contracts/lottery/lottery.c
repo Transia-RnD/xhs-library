@@ -1,18 +1,26 @@
 //------------------------------------------------------------------------------
 /*
-    Copyright (c) 2023 Transia, LLC
+    Copyright (c) 2024 Transia, LLC
 
-    This software component is intended for use by individuals or entities who
-    possess the necessary technical understanding and qualifications to utilize
-    such components in accordance with applicable laws and regulations.
-    Unauthorized use or distribution of this component may be subject to legal
-    consequences.
+    This financial tool is designed for use by individuals or organizations 
+    that hold the appropriate licenses and qualifications to engage with such 
+    products in a manner that complies with all relevant laws and regulations. 
+    Unauthorized use or redistribution of this tool may result in legal action.
 
-    The information provided in this software component is for informational
-    purposes only and should not be considered as technical advice or a
-    recommendation to engage in any specific implementation or usage strategy.
-    It is important to consult with a qualified professional or technical advisor
-    before integrating or making any decisions based on this component.
+    The content provided in this financial tool is for informational purposes 
+    only and should not be interpreted as financial advice or an endorsement of 
+    any particular investment or financial strategy. Users should seek advice 
+    from a certified professional or financial advisor before making any 
+    investment choices.
+
+    By using this financial tool, the user agrees to indemnify Transia, LLC from 
+    any claims, damages, or losses that may arise from their use or reliance on 
+    the information contained within. The user acknowledges that they are utilizing 
+    this tool at their own risk and that Transia, LLC will not be held responsible 
+    for any direct, indirect, incidental, punitive, special, or consequential 
+    damages, including but not limited to, damages for lost profits, goodwill, 
+    usage, data, or other intangible losses.
+
 */
 //==============================================================================
 
