@@ -46,7 +46,6 @@ describe('portfolio', () => {
     testContext = await setupClient(serverUrl)
     const hookWallet = testContext.hook1
 
-    // Setup Hook
     // Set Weak TSH
     const asTx: AccountSet = {
       TransactionType: 'AccountSet',
@@ -57,6 +56,8 @@ describe('portfolio', () => {
       wallet: hookWallet,
       tx: asTx,
     })
+
+    // Setup Hook
     const XYZ = new IC(testContext.gw.classicAddress, 'XYZ', 100000)
     await trust(testContext.client, XYZ.set(100000), ...[testContext.hook1])
     await sell(testContext.client, XYZ.set(20000), testContext.gw, 100)
