@@ -88,8 +88,7 @@ uint8_t txn[283] =
 #define EMIT_OUT (txn + 167U)
 
 uint8_t data[8];
-// #define LEDGER_OFFSET 604100 // 7 days
-#define LEDGER_OFFSET 5 // 5 seconds
+#define LEDGER_OFFSET 30 // 30 seconds
 #define MODEL_SIZE 36
 #define SEQ_OUT (data + 0U)
 
@@ -114,9 +113,6 @@ uint8_t lottery_start_ns[32] = {
 
 int64_t hook(uint32_t reserved)
 {
-
-    TRACESTR("lottery_end.c: called");
-
     // HOOK ON: TT Invoke
     int64_t tt = otxn_type();
     if (tt != ttINVOKE)
@@ -233,8 +229,6 @@ int64_t hook(uint32_t reserved)
         *b++ = (fee >> 8) & 0xFFU;
         *b++ = (fee >> 0) & 0xFFU;
     }
-
-    TRACEHEX(txn);
 
     // TXN: Emit/Send Txn
     uint8_t emithash[32];

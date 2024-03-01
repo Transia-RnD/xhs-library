@@ -1,9 +1,12 @@
 // xrpl
 import {
+  Client,
+  Wallet,
   Invoke,
   Payment,
   SetHookFlags,
   TransactionMetadata,
+  xrpToDrops,
 } from '@transia/xrpl'
 import { AccountID } from '@transia/ripple-binary-codec/dist/types'
 // xrpl-helpers
@@ -25,10 +28,10 @@ import {
   iHookParamValue,
   ExecutionUtility,
   StateUtility,
-  clearAllHooksV3,
   hexNamespace,
-  clearHookStateV3,
-  iHook,
+  // clearAllHooksV3,
+  // clearHookStateV3,
+  // iHook,
   generateHash,
   padHexString,
   // flipHex,
@@ -40,6 +43,79 @@ import {
 import { LotteryModel } from './models/LotteryModel'
 
 // Router: ACCEPT: success
+
+export async function submitTicket(
+  client: Client,
+  hash: string,
+  hookAccount: string,
+  account: Wallet
+) {
+  // Payment
+  // const daveWallet = testContext.dave
+  const otxn3param1 = new iHookParamEntry(
+    new iHookParamName('HPA'),
+    new iHookParamValue('0A01000100000000000000', true)
+  )
+  const otxn3param2 = new iHookParamEntry(
+    new iHookParamName('LH'),
+    new iHookParamValue(hash, true)
+  )
+  const builtTx3: Payment = {
+    TransactionType: 'Payment',
+    Account: account.classicAddress,
+    Destination: hookAccount,
+    Amount: xrpToDrops(10),
+    HookParameters: [otxn3param1.toXrpl(), otxn3param2.toXrpl()],
+  }
+  const result3 = await Xrpld.submit(client, {
+    wallet: account,
+    tx: builtTx3,
+  })
+  const hookExecutions3 = await ExecutionUtility.getHookExecutionsFromMeta(
+    client,
+    result3.meta as TransactionMetadata
+  )
+
+  expect(hookExecutions3.executions[1].HookReturnString).toMatch(
+    'lottery.c: Ticket Created.'
+  )
+}
+
+export async function endLottery(
+  client: Client,
+  hash: string,
+  hookAccount: string,
+  wallet: Wallet
+) {
+  // Invoke
+  const otxn4param1 = new iHookParamEntry(
+    new iHookParamName('HPA'),
+    new iHookParamValue('0A01000001000000000000', true)
+  )
+  const otxn4param2 = new iHookParamEntry(
+    new iHookParamName('LH'),
+    new iHookParamValue(hash, true)
+  )
+  const builtTx4: Invoke = {
+    TransactionType: 'Invoke',
+    Account: wallet.classicAddress,
+    Destination: hookAccount,
+    HookParameters: [otxn4param1.toXrpl(), otxn4param2.toXrpl()],
+  }
+  const result4 = await Xrpld.submit(client, {
+    wallet: wallet,
+    tx: builtTx4,
+  })
+  await close(client)
+  const hookExecutions4 = await ExecutionUtility.getHookExecutionsFromMeta(
+    client,
+    result4.meta as TransactionMetadata
+  )
+
+  expect(hookExecutions4.executions[1].HookReturnString).toMatch(
+    'lottery_end.c: Lottery Finished.'
+  )
+}
 
 describe('auction', () => {
   let testContext: XrplIntegrationTestContext
@@ -88,39 +164,51 @@ describe('auction', () => {
         { Hook: acct1hook4 },
       ],
     } as SetHookParams)
+    console.log(
+      JSON.stringify([
+        { Hook: acct1hook1 },
+        { Hook: acct1hook2 },
+        { Hook: acct1hook3 },
+        { Hook: acct1hook4 },
+      ])
+    )
   })
   afterAll(async () => {
-    await clearAllHooksV3({
-      client: testContext.client,
-      seed: testContext.hook1.seed,
-    } as SetHookParams)
+    // await clearAllHooksV3({
+    //   client: testContext.client,
+    //   seed: testContext.hook1.seed,
+    // } as SetHookParams)
 
-    const clearHook1 = {
-      Flags: SetHookFlags.hsfNSDelete,
-      HookNamespace: hexNamespace('lottery'),
-    } as iHook
-    const clearHook2 = {
-      Flags: SetHookFlags.hsfNSDelete,
-      HookNamespace: hexNamespace('lottery_start'),
-    } as iHook
-    await clearHookStateV3({
-      client: testContext.client,
-      seed: testContext.hook1.seed,
-      hooks: [
-        { Hook: clearHook1 },
-        { Hook: clearHook2 },
-        { Hook: clearHook1 },
-        { Hook: clearHook1 },
-      ],
-    } as SetHookParams)
+    // const clearHook1 = {
+    //   Flags: SetHookFlags.hsfNSDelete,
+    //   HookNamespace: hexNamespace('lottery'),
+    // } as iHook
+    // const clearHook2 = {
+    //   Flags: SetHookFlags.hsfNSDelete,
+    //   HookNamespace: hexNamespace('lottery_start'),
+    // } as iHook
+    // await clearHookStateV3({
+    //   client: testContext.client,
+    //   seed: testContext.hook1.seed,
+    //   hooks: [
+    //     { Hook: clearHook1 },
+    //     { Hook: clearHook2 },
+    //     { Hook: clearHook1 },
+    //     { Hook: clearHook1 },
+    //   ],
+    // } as SetHookParams)
     teardownClient(testContext)
   })
 
   it('lottery - success', async () => {
     // Invoke - Create the lottery
     const hookWallet = testContext.hook1
-    const feeWallet = testContext.alice
-    const lotteryModel = new LotteryModel(10, 0.5, feeWallet.classicAddress)
+    // const feeWallet = testContext.alice
+    const lotteryModel = new LotteryModel(
+      10,
+      0.5,
+      'r223rsyz1cfqPbjmiX6oYu1hFgNwCkWZH'
+    )
 
     const otxn1param1 = new iHookParamEntry(
       new iHookParamName('HPA'),
@@ -135,6 +223,8 @@ describe('auction', () => {
       Account: hookWallet.classicAddress,
       HookParameters: [otxn1param1.toXrpl(), otxn1param2.toXrpl()],
     }
+
+    console.log(JSON.stringify([otxn1param1.toXrpl(), otxn1param2.toXrpl()]))
 
     const result1 = await Xrpld.submit(testContext.client, {
       wallet: hookWallet,
@@ -168,94 +258,55 @@ describe('auction', () => {
 
     const hash = generateHash(Buffer.from(lotteryEnd.HookStateData))
 
-    // Payment
-    const carolWallet = testContext.carol
-    const otxn2param1 = new iHookParamEntry(
-      new iHookParamName('HPA'),
-      new iHookParamValue('0A01000100000000000000', true)
-    )
-    const otxn2param2 = new iHookParamEntry(
-      new iHookParamName('LH'),
-      new iHookParamValue(hash, true)
-    )
-    const builtTx2: Payment = {
-      TransactionType: 'Payment',
-      Account: carolWallet.classicAddress,
-      Destination: hookWallet.classicAddress,
-      Amount: '10000000',
-      HookParameters: [otxn2param1.toXrpl(), otxn2param2.toXrpl()],
-    }
-    const result2 = await Xrpld.submit(testContext.client, {
-      wallet: carolWallet,
-      tx: builtTx2,
-    })
-    const hookExecutions2 = await ExecutionUtility.getHookExecutionsFromMeta(
+    await submitTicket(
       testContext.client,
-      result2.meta as TransactionMetadata
+      hash,
+      hookWallet.classicAddress,
+      testContext.alice
     )
 
-    expect(hookExecutions2.executions[1].HookReturnString).toMatch(
-      'lottery.c: Ticket Created.'
-    )
-
-    // Payment
-    const daveWallet = testContext.dave
-    const otxn3param1 = new iHookParamEntry(
-      new iHookParamName('HPA'),
-      new iHookParamValue('0A01000100000000000000', true)
-    )
-    const otxn3param2 = new iHookParamEntry(
-      new iHookParamName('LH'),
-      new iHookParamValue(hash, true)
-    )
-    const builtTx3: Payment = {
-      TransactionType: 'Payment',
-      Account: daveWallet.classicAddress,
-      Destination: hookWallet.classicAddress,
-      Amount: '10000000',
-      HookParameters: [otxn3param1.toXrpl(), otxn3param2.toXrpl()],
-    }
-    const result3 = await Xrpld.submit(testContext.client, {
-      wallet: daveWallet,
-      tx: builtTx3,
-    })
-    const hookExecutions3 = await ExecutionUtility.getHookExecutionsFromMeta(
+    await submitTicket(
       testContext.client,
-      result3.meta as TransactionMetadata
+      hash,
+      hookWallet.classicAddress,
+      testContext.bob
     )
 
-    expect(hookExecutions3.executions[1].HookReturnString).toMatch(
-      'lottery.c: Ticket Created.'
-    )
-
-    // Invoke
-    const elsaWallet = testContext.elsa
-    const otxn4param1 = new iHookParamEntry(
-      new iHookParamName('HPA'),
-      new iHookParamValue('0A01000001000000000000', true)
-    )
-    const otxn4param2 = new iHookParamEntry(
-      new iHookParamName('LH'),
-      new iHookParamValue(hash, true)
-    )
-    const builtTx4: Invoke = {
-      TransactionType: 'Invoke',
-      Account: elsaWallet.classicAddress,
-      Destination: hookWallet.classicAddress,
-      HookParameters: [otxn4param1.toXrpl(), otxn4param2.toXrpl()],
-    }
-    const result4 = await Xrpld.submit(testContext.client, {
-      wallet: elsaWallet,
-      tx: builtTx4,
-    })
-    await close(testContext.client)
-    const hookExecutions4 = await ExecutionUtility.getHookExecutionsFromMeta(
+    await submitTicket(
       testContext.client,
-      result4.meta as TransactionMetadata
+      hash,
+      hookWallet.classicAddress,
+      testContext.carol
     )
 
-    expect(hookExecutions4.executions[1].HookReturnString).toMatch(
-      'lottery_end.c: Lottery Finished.'
+    await submitTicket(
+      testContext.client,
+      hash,
+      hookWallet.classicAddress,
+      testContext.dave
+    )
+    await submitTicket(
+      testContext.client,
+      hash,
+      hookWallet.classicAddress,
+      testContext.dave
+    )
+    await submitTicket(
+      testContext.client,
+      hash,
+      hookWallet.classicAddress,
+      testContext.elsa
+    )
+
+    for (let index = 0; index < 10; index++) {
+      await close(testContext.client)
+    }
+
+    await endLottery(
+      testContext.client,
+      hash,
+      hookWallet.classicAddress,
+      testContext.frank
     )
   })
 })

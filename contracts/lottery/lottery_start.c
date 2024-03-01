@@ -26,8 +26,7 @@
 
 #include "hookapi.h"
 
-// #define LEDGER_OFFSET 604100 // 7 days
-#define LEDGER_OFFSET 5 // 5 seconds
+#define LEDGER_OFFSET 30 // 30 seconds
 uint8_t data[8];
 #define SEQ_OUT (data + 0U)
 
@@ -39,8 +38,6 @@ uint8_t lottery_ns[32] = {
 
 int64_t hook(uint32_t reserved)
 {
-    TRACESTR("lottery_start.c: Called.");
-
     // HOOK ON: TT
     int64_t tt = otxn_type();
     if (tt != ttINVOKE)

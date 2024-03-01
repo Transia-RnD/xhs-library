@@ -88,10 +88,12 @@ uint8_t txn[283] =
 #define EMIT_OUT (txn + 167U)
 
 uint8_t data[8];
-// #define LEDGER_OFFSET 604100 // 7 days
-#define LEDGER_OFFSET 5 // 5 seconds
+#define LEDGER_OFFSET 30 // 30 seconds
 #define MODEL_SIZE 36
 #define SEQ_OUT (data + 0U)
+
+#define RAND_SEED(seed) ((seed) * 1103515245 + 12345)
+#define RAND(seed) (((RAND_SEED(seed)) / 65536) % 32768)
 
 uint8_t lottery_start_ns[32] = {
     0x0EU, 0xD0U, 0xEBU, 0x28U, 0xB2U, 0x4DU, 0x81U, 0x2DU, 0xA0U, 0xC8U,
@@ -101,9 +103,6 @@ uint8_t lottery_start_ns[32] = {
 
 int64_t hook(uint32_t reserved)
 {
-
-    TRACESTR("lottery_end.c: called");
-
     // HOOK ON: TT Invoke
     int64_t tt = otxn_type();
     if (tt != ttINVOKE)
@@ -153,10 +152,18 @@ int64_t hook(uint32_t reserved)
         rollback(SBUF("lottery_end.c: Lottery count does not exist."), __LINE__);
     }
 
+    TRACEVAR(count);
+
     uint8_t win_acct[20];
-    uint64_t rnd[4];
-    ledger_nonce(rnd, 32);
-    if (state_foreign(SBUF(win_acct), rnd[0] % count, 8, hash_buffer, 32, hook_acc + 12, 20) != 20)
+    uint64_t hash[32];
+    ledger_nonce(hash, 32);
+    unsigned int seed = 0;
+    for (int i = 0; GUARD(32), i < sizeof(seed); ++i) {
+        seed |= (unsigned int)hash[i] << (i * 8);
+    }
+    seed = RAND_SEED(seed);
+    int64_t random = RAND(seed) % count;
+    if (state_foreign(SBUF(win_acct), &random, 8, hash_buffer, 32, hook_acc + 12, 20) != 20)
     {
         rollback(SBUF("lottery_end.c: invalid winner."), __LINE__);
     }
