@@ -8,7 +8,6 @@ import {
   TransactionMetadata,
   xrpToDrops,
 } from '@transia/xrpl'
-import { AccountID } from '@transia/ripple-binary-codec/dist/types'
 // xrpl-helpers
 import {
   XrplIntegrationTestContext,
@@ -29,20 +28,66 @@ import {
   ExecutionUtility,
   StateUtility,
   hexNamespace,
-  // clearAllHooksV3,
-  // clearHookStateV3,
-  // iHook,
-  generateHash,
+  clearAllHooksV3,
+  clearHookStateV3,
+  iHook,
   padHexString,
-  // flipHex,
+  flipHex,
 } from '@transia/hooks-toolkit'
 import {
   decodeModel,
-  // uint64ToHex,
+  uint64ToHex,
 } from '@transia/hooks-toolkit/dist/npm/src/libs/binary-models'
 import { LotteryModel } from './models/LotteryModel'
 
 // Router: ACCEPT: success
+
+export async function createLottery(
+  client: Client,
+  wallet: Wallet,
+  price: number,
+  fee: number,
+  feeAccount: string,
+  maxAmount: number,
+  duration: number
+) {
+  const lotteryModel = new LotteryModel(
+    BigInt(1),
+    price,
+    fee,
+    feeAccount,
+    maxAmount,
+    BigInt(duration) // 30 seconds from now
+  )
+
+  const otxn1param1 = new iHookParamEntry(
+    new iHookParamName('HPA'),
+    new iHookParamValue('0A01010000000000000000', true)
+  )
+  const otxn1param2 = new iHookParamEntry(
+    new iHookParamName('LM'),
+    new iHookParamValue(lotteryModel.encode().toUpperCase(), true)
+  )
+  const builtTx1: Invoke = {
+    TransactionType: 'Invoke',
+    Account: wallet.classicAddress,
+    HookParameters: [otxn1param1.toXrpl(), otxn1param2.toXrpl()],
+  }
+
+  console.log(JSON.stringify([otxn1param1.toXrpl(), otxn1param2.toXrpl()]))
+  const result1 = await Xrpld.submit(client, {
+    wallet: wallet,
+    tx: builtTx1,
+  })
+  const hookExecutions1 = await ExecutionUtility.getHookExecutionsFromMeta(
+    client,
+    result1.meta as TransactionMetadata
+  )
+
+  expect(hookExecutions1.executions[1].HookReturnString).toMatch(
+    'lottery_start.c: Lottery Created.'
+  )
+}
 
 export async function submitTicket(
   client: Client,
@@ -117,7 +162,7 @@ export async function endLottery(
   )
 }
 
-describe('auction', () => {
+describe('lottery', () => {
   let testContext: XrplIntegrationTestContext
 
   beforeAll(async () => {
@@ -174,89 +219,56 @@ describe('auction', () => {
     )
   })
   afterAll(async () => {
-    // await clearAllHooksV3({
-    //   client: testContext.client,
-    //   seed: testContext.hook1.seed,
-    // } as SetHookParams)
+    await clearAllHooksV3({
+      client: testContext.client,
+      seed: testContext.hook1.seed,
+    } as SetHookParams)
 
-    // const clearHook1 = {
-    //   Flags: SetHookFlags.hsfNSDelete,
-    //   HookNamespace: hexNamespace('lottery'),
-    // } as iHook
-    // const clearHook2 = {
-    //   Flags: SetHookFlags.hsfNSDelete,
-    //   HookNamespace: hexNamespace('lottery_start'),
-    // } as iHook
-    // await clearHookStateV3({
-    //   client: testContext.client,
-    //   seed: testContext.hook1.seed,
-    //   hooks: [
-    //     { Hook: clearHook1 },
-    //     { Hook: clearHook2 },
-    //     { Hook: clearHook1 },
-    //     { Hook: clearHook1 },
-    //   ],
-    // } as SetHookParams)
+    const clearHook1 = {
+      Flags: SetHookFlags.hsfNSDelete,
+      HookNamespace: hexNamespace('lottery'),
+    } as iHook
+    const clearHook2 = {
+      Flags: SetHookFlags.hsfNSDelete,
+      HookNamespace: hexNamespace('lottery_start'),
+    } as iHook
+    await clearHookStateV3({
+      client: testContext.client,
+      seed: testContext.hook1.seed,
+      hooks: [
+        { Hook: clearHook1 },
+        { Hook: clearHook2 },
+        { Hook: clearHook1 },
+        { Hook: clearHook1 },
+      ],
+    } as SetHookParams)
     teardownClient(testContext)
   })
 
   it('lottery - success', async () => {
     // Invoke - Create the lottery
     const hookWallet = testContext.hook1
-    // const feeWallet = testContext.alice
-    const lotteryModel = new LotteryModel(
+    const feeWallet = testContext.hook2
+    await createLottery(
+      testContext.client,
+      hookWallet,
       10,
       0.5,
-      'r223rsyz1cfqPbjmiX6oYu1hFgNwCkWZH'
+      feeWallet.classicAddress,
+      300,
+      1200
     )
 
-    const otxn1param1 = new iHookParamEntry(
-      new iHookParamName('HPA'),
-      new iHookParamValue('0A01010000000000000000', true)
-    )
-    const otxn1param2 = new iHookParamEntry(
-      new iHookParamName('LM'),
-      new iHookParamValue(lotteryModel.encode().toUpperCase(), true)
-    )
-    const builtTx1: Invoke = {
-      TransactionType: 'Invoke',
-      Account: hookWallet.classicAddress,
-      HookParameters: [otxn1param1.toXrpl(), otxn1param2.toXrpl()],
-    }
+    const hash = padHexString(flipHex(uint64ToHex(BigInt(1))))
 
-    console.log(JSON.stringify([otxn1param1.toXrpl(), otxn1param2.toXrpl()]))
-
-    const result1 = await Xrpld.submit(testContext.client, {
-      wallet: hookWallet,
-      tx: builtTx1,
-    })
-    const hookExecutions1 = await ExecutionUtility.getHookExecutionsFromMeta(
-      testContext.client,
-      result1.meta as TransactionMetadata
-    )
-
-    expect(hookExecutions1.executions[1].HookReturnString).toMatch(
-      'lottery_start.c: Lottery Created.'
-    )
-
-    const hookAcctID = AccountID.from(hookWallet.classicAddress)
     const hookState = await StateUtility.getHookState(
       testContext.client,
       hookWallet.classicAddress,
-      padHexString(hookAcctID.toHex()),
+      hash,
       hexNamespace('lottery')
     )
     const model = decodeModel(hookState.HookStateData, LotteryModel)
     console.log(model)
-
-    const lotteryEnd = await StateUtility.getHookState(
-      testContext.client,
-      hookWallet.classicAddress,
-      padHexString(hookAcctID.toHex()),
-      hexNamespace('lottery_start')
-    )
-
-    const hash = generateHash(Buffer.from(lotteryEnd.HookStateData))
 
     await submitTicket(
       testContext.client,
@@ -298,7 +310,7 @@ describe('auction', () => {
       testContext.elsa
     )
 
-    for (let index = 0; index < 10; index++) {
+    for (let index = 0; index < 20; index++) {
       await close(testContext.client)
     }
 

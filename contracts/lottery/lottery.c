@@ -37,7 +37,9 @@
                                       ((n & 0xFF000000000000ULL) >> 40ULL) | \
                                       ((n & 0xFF00000000000000ULL) >> 56ULL)))
 
-#define MODEL_SIZE 36
+#define LOTTERY_MODEL 60U
+#define ID_OFFSET 0U
+#define PRICE_OFFSET 8U
 
 uint8_t lottery_start_ns[32] = {
     0x0EU, 0xD0U, 0xEBU, 0x28U, 0xB2U, 0x4DU, 0x81U, 0x2DU, 0xA0U, 0xC8U,
@@ -47,9 +49,6 @@ uint8_t lottery_start_ns[32] = {
 
 int64_t hook(uint32_t reserved)
 {
-
-    TRACESTR("lottery.c: called");
-
     // HOOK ON: TT Payment
     int64_t tt = otxn_type();
     if (tt != ttPAYMENT)
@@ -63,9 +62,11 @@ int64_t hook(uint32_t reserved)
     uint8_t hook_acc[32];
     hook_account(hook_acc + 12, 20);
 
+    // GUARD: Skip Outgoing Txns
     if (BUFFER_EQUAL_20(hook_acc + 12, otx_acc + 12))
         rollback(SBUF("lottery.c: outgoing tx on: `Account`."), __LINE__);
 
+    // STATE: Get Lottery Model
     uint8_t lottery_hash[32];
     uint8_t lh_key[2] = {'L', 'H'};
     if (otxn_param(SBUF(lottery_hash), SBUF(lh_key)) != 32)
@@ -73,9 +74,17 @@ int64_t hook(uint32_t reserved)
         rollback(SBUF("lottery_start.c: Invalid OTXN Parameter `LH`"), __LINE__);
     }
 
-    // NS: End Ledger Time
+    // VALIDATE: Lottery Exists
+    uint8_t model_buffer[LOTTERY_MODEL];
+    if (state(SBUF(model_buffer), SBUF(lottery_hash)) != LOTTERY_MODEL)
+    {
+        rollback(SBUF("lottery.c: Lottery does not exist."), __LINE__);
+    }
+
+    // STATE: Get End Ledger Time
     uint8_t elt_buffer[8];
-    state_foreign(elt_buffer, 8, hook_acc + 12, 20, lottery_start_ns, 32, hook_acc + 12, 20);
+    int64_t lottery_id = UINT64_FROM_BUF(model_buffer + ID_OFFSET);
+    state_foreign(elt_buffer, 8, &lottery_id, 8, lottery_start_ns, 32, hook_acc + 12, 20);
 
     int64_t end_ledger = FLIP_ENDIAN_64(UINT64_FROM_BUF(elt_buffer));
     int64_t ll_time = ledger_last_time();
@@ -84,49 +93,31 @@ int64_t hook(uint32_t reserved)
         rollback(SBUF("lottery.c: Lottery ended."), __LINE__);
     }
 
-    // VALIDATION: Lottery Exists
-    uint8_t model_buffer[MODEL_SIZE];
-    if (state(SBUF(model_buffer), hook_acc + 12, 20) != MODEL_SIZE)
-    {
-        rollback(SBUF("lottery.c: Lottery does not exist."), __LINE__);
-    }
-
-    // VALIDATION: Payment Amount
-    int64_t oslot = otxn_slot(0);
-    if (oslot < 0)
-        rollback(SBUF("lottery.c: Could not slot originating txn."), 1);
-
-    int64_t amt_slot = slot_subfield(oslot, sfAmount, 1);
-    if (amt_slot < 0)
-        rollback(SBUF("lottery.c: Could not slot otxn.sfAmount"), 2);
-
-    int64_t amount_xfl = slot_float(amt_slot);
-    if (amount_xfl < 0)
-        rollback(SBUF("lottery.c: Could not parse amount."), 1);
-
-    int64_t price_xfl = 6107881094714392576;
-    // int64_t value1 = -INT64_FROM_BUF(model_buffer + 12U);
-    // TRACEVAR(value1);
-    // int64_t value2 = float_int(value1, 0, 1);
+    // VALIDATE: Payment Amount == Lottery Ticket Price
+    uint8_t amt_buffer[8];
+    otxn_field(SBUF(amt_buffer), sfAmount);
+    int64_t amount_drops = AMOUNT_TO_DROPS(amt_buffer);
+    int64_t amount_xfl = float_set(-6, amount_drops);
+    int64_t price_xfl = FLIP_ENDIAN_64(UINT64_FROM_BUF(model_buffer + PRICE_OFFSET));
     if (float_compare(amount_xfl, price_xfl, COMPARE_EQUAL) == 0)
     {
-        rollback(SBUF("lottery.c: Lottery payment error."), __LINE__);
+        rollback(SBUF("lottery.c: Invalid Payment Amount."), __LINE__);
     }
 
-    // Save state for lottery ticket
+    // STATE: Save Lottery Ticket
     uint8_t ticket_hash[32];
     ledger_nonce(SBUF(ticket_hash));
     state_foreign_set(SBUF(otx_acc), SBUF(ticket_hash), lottery_hash, 32, hook_acc + 12, 20);
 
-    // Update Ticket count
+    // STATE: Get Ticket Count
     int64_t count;
     state_foreign(&count, 8, hook_acc + 12, 20, lottery_hash, 32, hook_acc + 12, 20);
 
-    // Reverse ticket / count
+    // STATE: Save Reverse Ticket / Count
     state_foreign_set(otx_acc + 12, 20, &count, 8, lottery_hash, 32, hook_acc + 12, 20);
 
+    // STATE: Update Ticket Count
     count++;
-
     state_foreign_set(&count, 8, hook_acc + 12, 20, lottery_hash, 32, hook_acc + 12, 20);
 
     _g(1, 1);

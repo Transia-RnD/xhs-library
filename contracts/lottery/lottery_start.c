@@ -26,9 +26,11 @@
 
 #include "hookapi.h"
 
-#define LEDGER_OFFSET 30 // 30 seconds
+#define LOTTERY_MODEL 60U
+#define ID_OFFSET 0U
+#define TIME_OFFSET 52U
 uint8_t data[8];
-#define SEQ_OUT (data + 0U)
+#define TIME_OUT (data + 0U)
 
 uint8_t lottery_ns[32] = {
     0xBEU, 0x7FU, 0x94U, 0xBBU, 0x10U, 0xC4U, 0xBEU, 0x7BU, 0x44U, 0x7FU,
@@ -56,21 +58,36 @@ int64_t hook(uint32_t reserved)
     if (!BUFFER_EQUAL_20(hook_acc + 12, otx_acc + 12))
         accept(SBUF("lottery_end.c: incoming tx on: `Account`."), __LINE__);
 
-    uint8_t lottery_model[36];
+    uint8_t lottery_model[LOTTERY_MODEL];
     uint8_t lm_key[2] = {'L', 'M'};
-    if (otxn_param(SBUF(lottery_model), SBUF(lm_key)) != 36)
+    if (otxn_param(SBUF(lottery_model), SBUF(lm_key)) != LOTTERY_MODEL)
     {
         rollback(SBUF("lottery_start.c: Invalid Hook Parameter `LM`"), __LINE__);
     }
 
-    // saves the hook param lottery model into the "lottery" namespace
-    state_foreign_set(SBUF(lottery_model), hook_acc + 12, 20, lottery_ns, 32, hook_acc + 12, 20);
+    int64_t lottery_id = UINT64_FROM_BUF(lottery_model + ID_OFFSET);
+    if (state_foreign(SBUF(lottery_model), &lottery_id, 8, lottery_ns, 32, hook_acc + 12, 20) != DOESNT_EXIST)
+    {
+        rollback(SBUF("lottery_start.c: Lottery Already Exists"), __LINE__);
+    }
 
-    // create new lottery
+    // STATE: Get Lottery Count
+    int64_t count;
+    state_foreign(&count, 8, hook_acc + 12, 20, lottery_ns, 32, hook_acc + 12, 20);
+
+    // STATE: Save Lottery
+    state_foreign_set(SBUF(lottery_model), &lottery_id, 8, lottery_ns, 32, hook_acc + 12, 20);
+
+    // STATE: Save Lottery Time
     int64_t ll_time = ledger_last_time();
-    ll_time += LEDGER_OFFSET;
-    INT64_TO_BUF(SEQ_OUT, ll_time);
-    state_set(&ll_time, 8, hook_acc + 12, 20);
+    int64_t ledger_offset = UINT64_FROM_BUF(lottery_model + TIME_OFFSET);
+    ll_time += ledger_offset;
+    INT64_TO_BUF(TIME_OUT, ll_time);
+    state_set(&ll_time, 8, &lottery_id, 8);
+
+    // STATE: Update Lottery Count
+    count++;
+    state_foreign_set(&count, 8, hook_acc + 12, 20, lottery_ns, 32, hook_acc + 12, 20);
 
     accept(SBUF("lottery_start.c: Lottery Created."), __LINE__);
 
