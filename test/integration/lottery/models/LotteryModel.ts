@@ -12,16 +12,18 @@ export class LotteryModel extends BaseModel {
   fee: XFL // fee
   feeAddress: XRPAddress // fee address
   maxAmount: XFL // maximum amount
+  maxTickets: UInt64 // maximum tickets
   duration: UInt64 // lottery duration (seconds)
 
-  // 60 bytes
+  // 68 bytes
   constructor(
     id: UInt64, // 8 bytes / 0
     price: XFL, // 8 bytes / 8
     fee: XFL, // 8 bytes / 16
     feeAddress: XRPAddress, // 20 bytes / 24
     maxAmount: XFL, // 8 bytes / 44
-    duration: UInt64 // 8 bytes / 52
+    maxTickets: UInt64, // 8 bytes / 52
+    duration: UInt64 // 8 bytes / 60
   ) {
     super()
     this.id = id
@@ -29,6 +31,7 @@ export class LotteryModel extends BaseModel {
     this.fee = fee
     this.feeAddress = feeAddress
     this.maxAmount = maxAmount
+    this.maxTickets = maxTickets
     this.duration = duration
   }
 
@@ -39,6 +42,7 @@ export class LotteryModel extends BaseModel {
       { field: 'fee', type: 'xfl' },
       { field: 'feeAddress', type: 'xrpAddress' },
       { field: 'maxAmount', type: 'xfl' },
+      { field: 'maxTickets', type: 'uint64' },
       { field: 'duration', type: 'uint64' },
     ]
   }
@@ -50,6 +54,7 @@ export class LotteryModel extends BaseModel {
       fee: this.fee,
       feeAddress: this.feeAddress,
       maxAmount: this.maxAmount,
+      maxTickets: this.maxTickets,
       duration: this.duration,
     }
   }

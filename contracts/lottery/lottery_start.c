@@ -26,9 +26,9 @@
 
 #include "hookapi.h"
 
-#define LOTTERY_MODEL 60U
+#define LOTTERY_MODEL 68U
 #define ID_OFFSET 0U
-#define TIME_OFFSET 52U
+#define TIME_OFFSET 60U
 uint8_t data[8];
 #define TIME_OUT (data + 0U)
 

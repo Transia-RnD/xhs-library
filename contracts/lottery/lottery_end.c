@@ -174,21 +174,69 @@ uint8_t ns_txn[250] =
 } while(0) 
 // clang-format on
 
-#define LOTTERY_MODEL 60U
+#define LOTTERY_MODEL 68U
 #define ID_OFFSET 0U
 #define PRICE_OFFSET 8U
-#define TIME_OFFSET 52U
+#define MAX_OFFSET 44U
+#define MAX_TICKETS_OFFSET 52U
+#define TIME_OFFSET 60U
 uint8_t data[8];
 #define TIME_OUT (data + 0U)
 
-#define RAND_SEED(seed) ((seed) * 1103515245 + 12345)
-#define RAND(seed) (((RAND_SEED(seed)) / 65536) % 32768)
+#define LCG_MULTIPLIER 1103515245
+#define LCG_INCREMENT 12345
+#define LCG_MODULUS (1U << 31)
+
+// Macro to generate a seed from the hash provided by ledger_nonce
+#define GENERATE_SEED(hash, hash_size, seed) do { \
+    seed = 0; \
+    for (int i = 0; GUARD(32), i < sizeof(seed); ++i) { \
+        seed ^= ((unsigned int)hash[i] & 0xFF) << (i * 8); \
+    } \
+} while(0)
+
+// Macro for the LCG function to generate a pseudo-random number
+#define LCG_RAND(seed) \
+    ((seed) = (LCG_MULTIPLIER * (seed) + LCG_INCREMENT) % LCG_MODULUS)
+
+// Macro to generate a random number in the range [0, count)
+#define GENERATE_RANDOM(hash, hash_size, count, random) do { \
+    unsigned int seed; \
+    GENERATE_SEED(hash, hash_size, seed); \
+    LCG_RAND(seed); \
+    random = seed % count; \
+} while(0)
 
 uint8_t lottery_start_ns[32] = {
     0x0EU, 0xD0U, 0xEBU, 0x28U, 0xB2U, 0x4DU, 0x81U, 0x2DU, 0xA0U, 0xC8U,
     0x4FU, 0xDDU, 0xC0U, 0x64U, 0x14U, 0xE0U, 0xC6U, 0x45U, 0x26U, 0x7CU,
     0x8EU, 0xCCU, 0x4DU, 0xC1U, 0xFFU, 0x58U, 0x5CU, 0xF6U, 0x28U, 0x31U,
     0x6DU, 0x70U};
+
+uint8_t rate_acct[20] = {
+    0x05U, 0xB5U, 0xF4U, 0x3AU, 0xF7U, 0x17U, 0xB8U, 0x19U, 0x48U, 0x49U, 
+    0x1FU, 0xB7U, 0x07U, 0x9EU, 0x4FU, 0x17U, 0x3FU, 0x4EU, 0xCEU, 0xB3U
+};
+
+// uint8_t rate_acct[20] = {
+//     0x7CU, 0xE1U, 0x83U, 0x29U, 0x70U, 0x51U, 0x4CU, 0x37U, 0x97U, 0xB2U, 
+//     0xABU, 0x5EU, 0x14U, 0x52U, 0x69U, 0x0FU, 0x1DU, 0x6EU, 0xA3U, 0x70U
+// };
+
+uint8_t issuer_buffer[20] = {
+    0x5BU, 0xEFU, 0x92U, 0x1AU, 0x21U, 0x7DU, 0x57U, 0xFDU, 0xA5U, 0xB5U, 
+    0x6DU, 0x5BU, 0x40U, 0xBEU, 0xE4U, 0x0DU, 0x1AU, 0xC1U, 0x12U, 0x7FU
+};
+
+// uint8_t issuer_buffer[20] = {
+//     0xA4U, 0x07U, 0xAF, 0x58U, 0x56U, 0xCCU, 0xF3U, 0xC4U, 0x26U, 0x19U, 
+//     0xDAU, 0xA9U, 0x25U, 0x81U, 0x3FU, 0xC9U, 0x55U, 0xC7U, 0x29U, 0x83U
+// };
+
+uint8_t currency_buffer[20] = {
+    0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
+    0x00U, 0x00U, 0x55U, 0x53U, 0x44U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U
+};
 
 int64_t hook(uint32_t reserved)
 {
@@ -229,28 +277,35 @@ int64_t hook(uint32_t reserved)
     state_foreign(elt_buffer, 8, &lottery_id, 8, lottery_start_ns, 32, hook_acc + 12, 20);
     int64_t el_time = FLIP_ENDIAN_64(UINT64_FROM_BUF(elt_buffer));
     int64_t cl_time = ledger_last_time();
-    if (cl_time <= el_time)
-    {
-        rollback(SBUF("lottery_end.c: Lottery not ended."), __LINE__);
-    }
 
     // VALIDATION: Lottery Ticket Count Exists
-    int64_t count;
-    if (state_foreign(&count, 8, hook_acc + 12, 20, hash_buffer, 32, hook_acc + 12, 20) != 8)
+    int64_t ticket_count;
+    if (state_foreign(&ticket_count, 8, hook_acc + 12, 20, hash_buffer, 32, hook_acc + 12, 20) == DOESNT_EXIST)
     {
-        rollback(SBUF("lottery_end.c: Lottery count does not exist."), __LINE__);
+        int64_t ll_time = ledger_last_time();
+        int64_t ledger_offset = UINT64_FROM_BUF(model_buffer + TIME_OFFSET);
+        ll_time += ledger_offset;
+        INT64_TO_BUF(TIME_OUT, ll_time);
+        state_foreign_set(&ll_time, 8, &lottery_id, 8, lottery_start_ns, 32, hook_acc + 12, 20);
+        accept(SBUF("lottery_end.c: Lottery Finished."), __LINE__);
+    }
+
+    if (ticket_count < 0) {
+        rollback(SBUF("lottery_end.c: Lottery count insane value."), __LINE__);
+    }
+
+    int64_t max_tickets = UINT64_FROM_BUF(model_buffer + MAX_TICKETS_OFFSET);
+    if (cl_time < el_time && ticket_count < max_tickets)
+    {
+        rollback(SBUF("lottery_end.c: Lottery not ended."), __LINE__);
     }
 
     uint8_t win_acct[20];
     uint64_t hash[32];
     ledger_nonce(hash, 32);
-    unsigned int seed = 0;
-    for (int i = 0; GUARD(32), i < sizeof(seed); ++i) {
-        seed |= (unsigned int)hash[i] << (i * 8);
-    }
-    seed = RAND_SEED(seed);
-    int64_t random = RAND(seed) % count;
-    if (state_foreign(SBUF(win_acct), &random, 8, hash_buffer, 32, hook_acc + 12, 20) != 20)
+    int64_t random_number;
+    GENERATE_RANDOM(hash, 32, ticket_count, random_number);
+    if (state_foreign(SBUF(win_acct), &random_number, 8, hash_buffer, 32, hook_acc + 12, 20) != 20)
     {
         rollback(SBUF("lottery_end.c: invalid winner."), __LINE__);
     }
@@ -258,10 +313,32 @@ int64_t hook(uint32_t reserved)
     // TXN: PREPARE: Init
     etxn_reserve(2);
 
-    int64_t amount_xfl = FLIP_ENDIAN_64(UINT64_FROM_BUF(model_buffer + PRICE_OFFSET)); \
-    int64_t payout_xfl = float_multiply(amount_xfl, float_set(0, count)); \
+    int64_t amount_xfl = FLIP_ENDIAN_64(UINT64_FROM_BUF(model_buffer + PRICE_OFFSET));
+    int64_t payout_xfl = float_multiply(amount_xfl, float_set(0, ticket_count));
+
+    // VALIDATE: Lottery Has Reached Limit
+    uint8_t line_kl[34];
+    util_keylet(SBUF(line_kl), KEYLET_LINE, rate_acct, 20, issuer_buffer, 20, currency_buffer, 20);
+
+    // SLOT SET: Slot 1
+    if (slot_set(SBUF(line_kl), 1) != 1)
+        accept(SBUF("lottery_end.c: Could not load trustline"), __LINE__);
+
+    // SLOT SUBFIELD: sfLowLimit
+    if (slot_subfield(1, sfLowLimit, 1) != 1)
+        accept(SBUF("lottery_end.c: Could not load trustline `sfLowLimit`"), __LINE__);
+
+    int64_t rate_xfl = slot_float(1); // <- amount as token
+    int64_t max_xfl = FLIP_ENDIAN_64(UINT64_FROM_BUF(model_buffer + MAX_OFFSET));
+    int64_t count_xfl = float_set(0, ticket_count);
+    int64_t rate_pool_xfl = float_multiply(rate_xfl, payout_xfl);
+    
+    // ADJUSTMENT: If Prize Pool > Max Allowed -> Payout == Max
+    if (float_compare(rate_pool_xfl, max_xfl, COMPARE_GREATER) == 1) \
+        payout_xfl = max_xfl;
+    
     if (float_compare(payout_xfl, 0, COMPARE_LESS | COMPARE_EQUAL) == 1) \
-        rollback(SBUF("lottery_end.c: invalid calc parameter `Amount`."), __LINE__); \
+        rollback(SBUF("lottery_end.c: invalid calc parameter `Amount`."), __LINE__);
 
     PREPARE_PAYMENT_TXN(hook_acc + 12, win_acct, payout_xfl);
     PREPARE_HOOK_TXN(hook_acc + 12, hash_buffer);

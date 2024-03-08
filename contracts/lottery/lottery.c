@@ -37,9 +37,10 @@
                                       ((n & 0xFF000000000000ULL) >> 40ULL) | \
                                       ((n & 0xFF00000000000000ULL) >> 56ULL)))
 
-#define LOTTERY_MODEL 60U
+#define LOTTERY_MODEL 68U
 #define ID_OFFSET 0U
 #define PRICE_OFFSET 8U
+#define MAX_TICKETS_OFFSET 52U
 
 uint8_t lottery_start_ns[32] = {
     0x0EU, 0xD0U, 0xEBU, 0x28U, 0xB2U, 0x4DU, 0x81U, 0x2DU, 0xA0U, 0xC8U,
@@ -118,6 +119,12 @@ int64_t hook(uint32_t reserved)
 
     // STATE: Update Ticket Count
     count++;
+    int64_t max_tickets = UINT64_FROM_BUF(model_buffer + MAX_TICKETS_OFFSET);
+    if (count > max_tickets)
+    {
+        rollback(SBUF("lottery_end.c: Lottery maximum reached."), __LINE__);
+    }
+
     state_foreign_set(&count, 8, hook_acc + 12, 20, lottery_hash, 32, hook_acc + 12, 20);
 
     _g(1, 1);
