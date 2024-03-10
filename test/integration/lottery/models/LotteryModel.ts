@@ -7,7 +7,7 @@ import {
 } from '@transia/hooks-toolkit/dist/npm/src/libs/binary-models'
 
 export class LotteryModel extends BaseModel {
-  id: UInt64 // ticket price
+  id: UInt64 // id
   price: XFL // ticket price
   fee: XFL // fee
   feeAddress: XRPAddress // fee address
