@@ -108,7 +108,7 @@ export async function createLottery(
     HookParameters: [otxn1param1.toXrpl(), otxn1param2.toXrpl()],
   }
 
-  console.log(JSON.stringify([otxn1param1.toXrpl(), otxn1param2.toXrpl()]))
+  // console.log(JSON.stringify([otxn1param1.toXrpl(), otxn1param2.toXrpl()]))
   const result1 = await Xrpld.submit(client, {
     wallet: wallet,
     tx: builtTx1,
@@ -255,14 +255,14 @@ describe('lottery', () => {
         { Hook: acct1hook4 },
       ],
     } as SetHookParams)
-    console.log(
-      JSON.stringify([
-        { Hook: acct1hook1 },
-        { Hook: acct1hook2 },
-        { Hook: acct1hook3 },
-        { Hook: acct1hook4 },
-      ])
-    )
+    // console.log(
+    //   JSON.stringify([
+    //     { Hook: acct1hook1 },
+    //     { Hook: acct1hook2 },
+    //     { Hook: acct1hook3 },
+    //     { Hook: acct1hook4 },
+    //   ])
+    // )
   })
   afterAll(async () => {
     await clearAllHooksV3({
