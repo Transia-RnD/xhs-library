@@ -77,7 +77,7 @@ jobs:
 
       - name: Run docker in background
         run: |
-          docker run --detach --rm --name rippled-service -p 6006:6006 --health-cmd="wget localhost:6006 || exit 1" --health-interval=5s --health-retries=10 --health-timeout=2s gcr.io/thelab-924f3/dangell7-xahau-standalone:2023.12.29.689
+          docker run --detach --rm --name rippled-service -p 6006:6006 --health-cmd="wget localhost:6006 || exit 1" --health-interval=5s --health-retries=10 --health-timeout=2s transia/xahau-2024125-release738-xahau
 
       - name: Setup npm version 7
         run: |
