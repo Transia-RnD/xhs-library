@@ -77,3 +77,5 @@ This project is licensed under the GPL-3.0-or-later License - see the [LICENSE.m
 - **Denis Angell** - _Initial work_ - [dangell7](https://github.com/dangell7)
 
 xrpld-netgen up:standalone --network_id=21338
+
+tail -f xahau/log/debug.log | grep HookTrace
