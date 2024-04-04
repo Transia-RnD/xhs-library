@@ -41,22 +41,22 @@ ACC: The settlement account (globally per asset)
 Operations:
 
 // payment ops are: 
-    // D - deposit
+    // D - deposit (any)
 
-// invoke ops are: 
+// invoke ops are: (role)
     // I - initalize (any)
-    // B - debit (any)
-    // S - settle (any)
+    // B - debit (settler)
+    // S - settle (settler)
     // U/P - un/pause (admin)
     // M - modify (admin)
-    // R - refund (any)
-    // W - withdraw
+    // R - refund (refunder)
+    // W - withdraw (user)
 
 // invoke sub ops are: 
-    // A - modify admin
-    // D - modify debit key (role)
-    // W - modify withdraw key (role)
-    // S - modify settler key (role)
+    // A - modify admin account (role)
+    // B - modify debit account (role)
+    // S - modify settler account (role)
+    // W - modify withdraw pubkey (role)
 
 
 
