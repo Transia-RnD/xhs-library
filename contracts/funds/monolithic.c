@@ -136,6 +136,8 @@ uint8_t txn_out[300] =
     *(uint32_t *)(buf + 16) = *(uint32_t *)(i + 16); \
 }
 
+#define SVAR(x) &(x), sizeof(x)
+
 int64_t cbak(uint32_t f)
 {
     // TODO track withdrawal txns to see if they successfully executed
@@ -215,7 +217,7 @@ int64_t hook(uint32_t r)
 
     int64_t xfl_in;
     uint32_t flags;
-    uint8_t dtag[32];
+    uint32_t dtag;
 
     if (tt == ttPAYMENT)
     {
@@ -228,7 +230,7 @@ int64_t hook(uint32_t r)
 
         otxn_field(SBUF(amt), sfAmount);
 
-        if (otxn_field(dtag + 28, 4, sfDestinationTag) != 4)
+        if (otxn_field(SVAR(dtag), sfDestinationTag) != 4)
             NOPE("Monolithic: Destination Tag is Required.");
 
         if (!BUFFER_EQUAL_20(amt + 8, OUTCUR))
@@ -346,14 +348,15 @@ int64_t hook(uint32_t r)
 
         case 'D':
         {
-            uint8_t dtag_bal[8];
-            state(SBUF(dtag_bal), dtag + 28, 4);
-            int64_t dtag_bal_xfl = *((int64_t*)dtag_bal);
+            int64_t dtag_bal_xfl;
+            state(SVAR(dtag_bal_xfl), SVAR(dtag));
             
-            int64_t total_dtag_bal_xfl = float_sum(dtag_bal_xfl, xfl_in);
-            INT64_TO_BUF(dtag_bal, FLIP_ENDIAN_64(total_dtag_bal_xfl));
-            if (state_set(dtag_bal, 8, dtag + 28, 4) != 8)
-                NOPE("Monolithic: Insane balance on depositor.");
+            dtag_bal_xfl += float_sum(dtag_bal_xfl, xfl_in);
+            if (dtag_bal_xfl < 0)
+                NOPE("Monolithic: Insane balance on deposit.");
+            
+            if (state_set(SVAR(dtag_bal_xfl), SVAR(dtag)) != 8)
+                NOPE("Monolithic: Failed to set state on deposit.");
 
             DONE("Monolithic: Deposited.");
         }
@@ -361,27 +364,28 @@ int64_t hook(uint32_t r)
         // debit
         case 'B':
         {
-            if (otxn_param(dtag + 28, 4, "TAG", 3) != 4)
+            if (otxn_param(SVAR(dtag), "TAG", 3) != 4)
                 NOPE("Monolithic: Misconfigured. Missing TAG otxn parameter.");
 
-            uint8_t xfl_buffer[8];
-            if (otxn_param(xfl_buffer, 8, "AMT", 3) != 8)
+            int64_t sig_amt;
+            if (otxn_param(SVAR(sig_amt), "AMT", 3) != 8 || sig_amt < 0)
                 NOPE("Monolithic: Misconfigured. Missing AMT otxn parameter.");
-            uint64_t sig_amt = *((uint64_t*)(xfl_buffer));
 
-            uint8_t nonce_buffer[4];
-            if (otxn_param(nonce_buffer, 4, "SEQ", 3) != 4)
+            uint32_t sig_nce;
+            if (otxn_param(SVAR(sig_nce), "SEQ", 3) != 4)
                 NOPE("Monolithic: Misconfigured. Missing SEQ otxn parameter.");
-            uint32_t sig_nce = *((uint32_t*)(nonce_buffer));
 
             // check the nonce
-            uint64_t dbt_seq;
-            state(&dbt_seq, 8, otxn_accid + 12, 20);
+            uint32_t dbt_seq;
+            state(SVAR(dbt_seq), otxn_accid + 12, 20);
             TRACEVAR(dbt_seq);
 
             if (dbt_seq != sig_nce)
                 NOPE("Monolithic: Debit nonce out of sequence.");
 
+            // RH UPTO: above changes give some idea of what can be improved
+
+            
             uint8_t dtag_bal[8];
             state(SBUF(dtag_bal), dtag + 28, 4);
             int64_t dtag_bal_xfl = *((int64_t*)dtag_bal);
