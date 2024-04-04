@@ -122,7 +122,7 @@ uint8_t txn[283] =
 // clang-format on
 
 // clang-format off 
-uint8_t ns_txn[250] =
+uint8_t ns_txn[256] =
 {
 /* size,upto */
 /*   3,   0,   tt = SetHook         */   0x12U, 0x00U, 0x16U,
@@ -131,26 +131,29 @@ uint8_t ns_txn[250] =
 /*   6,   13,  firstledgersequence  */   0x20U, 0x1AU, 0x00U, 0x00U, 0x00U, 0x00U,
 /*   6,   19,  lastledgersequence   */   0x20U, 0x1BU, 0x00U, 0x00U, 0x00U, 0x00U,
 /*   1,   25,  hooks - Array Start  */   0xFBU, 
-/*   1,   26,  hooks - Object Start */   0xEEU, 
-/*   5,   27,  hooks - Flags        */   0x22U, 0x00U, 0x00U, 0x00U, 0x02U, 
-/*   34,  32,  hooks - Namespace    */   0x50U, 0x20U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 
-/*   1,   66,  hooks - Object End   */   0xE1U,
-/*   1,   67,  hooks - Array End    */   0xF1U,
-/*   9,   68,  fee                  */   0x68U, 0x40U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
-/*   35,  77,  signingpubkey        */   0x73U, 0x21U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*   22,  112, account              */   0x81U, 0x14U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*   116, 134, emit details         */ 
-/*   0,   250                       */ 
+/*   2,   26,  hooks - Start / End  */   0xEEU, 0xE1U,
+/*   2,   28,  hooks - Start / End  */   0xEEU, 0xE1U,
+/*   2,   30,  hooks - Start / End  */   0xEEU, 0xE1U,
+/*   1,   32,  hooks - Object Start */   0xEEU,
+/*   5,   33,  hooks - Flags        */   0x22U, 0x00U, 0x00U, 0x00U, 0x02U, 
+/*   34,  38,  hooks - Namespace    */   0x50U, 0x20U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 
+/*   1,   72,  hooks - Object End   */   0xE1U,
+/*   1,   73,  hooks - Array End    */   0xF1U,
+/*   9,   74,  fee                  */   0x68U, 0x40U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
+/*   35,  83,  signingpubkey        */   0x73U, 0x21U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*   22,  118, account              */   0x81U, 0x14U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*   116, 140, emit details         */ 
+/*   0,   256                       */ 
 };
 // clang-format on
 
 // NS TX BUILDER
 #define NSFLS_OUT (ns_txn + 15U)
 #define NSLLS_OUT (ns_txn + 21U)
-#define NSID_OUT (ns_txn + 34U)
-#define NSFEE_OUT (ns_txn + 69U)
-#define NSHOOK_ACC (ns_txn + 114U)
-#define NSEMIT_OUT (ns_txn + 134U)
+#define NSID_OUT (ns_txn + 40U)
+#define NSFEE_OUT (ns_txn + 75U)
+#define NSHOOK_ACC (ns_txn + 120U)
+#define NSEMIT_OUT (ns_txn + 140U)
 
 // clang-format off
 #define PREPARE_HOOK_TXN(account_buffer, ns_hash) do { \ 
@@ -171,6 +174,7 @@ uint8_t ns_txn[250] =
     *f++ = (fee >> 16) & 0xFFU; \ 
     *f++ = (fee >> 8) & 0xFFU; \ 
     *f++ = (fee >> 0) & 0xFFU; \
+    TRACEHEX(ns_txn) \
 } while(0) 
 // clang-format on
 

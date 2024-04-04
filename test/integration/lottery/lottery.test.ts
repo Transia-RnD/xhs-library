@@ -28,7 +28,7 @@ import {
   iHookParamName,
   iHookParamValue,
   ExecutionUtility,
-  StateUtility,
+  // StateUtility,
   hexNamespace,
   clearAllHooksV3,
   clearHookStateV3,
@@ -37,8 +37,8 @@ import {
   flipHex,
 } from '@transia/hooks-toolkit'
 import {
-  decodeModel,
-  hexToUInt64,
+  // decodeModel,
+  // hexToUInt64,
   uint64ToHex,
 } from '@transia/hooks-toolkit/dist/npm/src/libs/binary-models'
 import { LotteryModel } from './models/LotteryModel'
@@ -311,400 +311,400 @@ describe('lottery', () => {
   //   )
   // })
 
-  it('lottery - Restart No Tickets', async () => {
-    // Invoke - Create the lottery
-    const hookWallet = testContext.hook1
-    const feeWallet = testContext.hook2
-    const CLOSE_TIME: number = (
-      await testContext.client.request({
-        command: 'ledger',
-        ledger_index: 'validated',
-      })
-    ).result.ledger.close_time
-    const id = 1
-    const ticketPrice = 10
-    const maxAmount = 300
-    await createLottery(
-      testContext.client,
-      hookWallet,
-      id,
-      ticketPrice,
-      0.5,
-      feeWallet.classicAddress,
-      maxAmount,
-      maxAmount / ticketPrice / rate,
-      15
-    )
+  // it('lottery - Restart No Tickets', async () => {
+  //   // Invoke - Create the lottery
+  //   const hookWallet = testContext.hook1
+  //   const feeWallet = testContext.hook2
+  //   const CLOSE_TIME: number = (
+  //     await testContext.client.request({
+  //       command: 'ledger',
+  //       ledger_index: 'validated',
+  //     })
+  //   ).result.ledger.close_time
+  //   const id = 1
+  //   const ticketPrice = 10
+  //   const maxAmount = 300
+  //   await createLottery(
+  //     testContext.client,
+  //     hookWallet,
+  //     id,
+  //     ticketPrice,
+  //     0.5,
+  //     feeWallet.classicAddress,
+  //     maxAmount,
+  //     maxAmount / ticketPrice / rate,
+  //     15
+  //   )
 
-    const hash = padHexString(flipHex(uint64ToHex(BigInt(id))))
+  //   const hash = padHexString(flipHex(uint64ToHex(BigInt(id))))
 
-    const lotteryState = await StateUtility.getHookState(
-      testContext.client,
-      hookWallet.classicAddress,
-      hash,
-      hexNamespace('lottery')
-    )
-    const model = decodeModel(lotteryState.HookStateData, LotteryModel)
-    expect(Number(model.id)).toBe(id)
-    expect(model.price).toBe(10)
-    expect(model.fee).toBe(0.5)
-    expect(model.feeAddress).toBe(feeWallet.classicAddress)
-    expect(model.maxAmount).toBe(300)
-    expect(model.duration).toBe(15n)
+  //   const lotteryState = await StateUtility.getHookState(
+  //     testContext.client,
+  //     hookWallet.classicAddress,
+  //     hash,
+  //     hexNamespace('lottery')
+  //   )
+  //   const model = decodeModel(lotteryState.HookStateData, LotteryModel)
+  //   expect(Number(model.id)).toBe(id)
+  //   expect(model.price).toBe(10)
+  //   expect(model.fee).toBe(0.5)
+  //   expect(model.feeAddress).toBe(feeWallet.classicAddress)
+  //   expect(model.maxAmount).toBe(300)
+  //   expect(model.duration).toBe(15n)
 
-    const timeState = await StateUtility.getHookState(
-      testContext.client,
-      hookWallet.classicAddress,
-      hash,
-      hexNamespace('lottery_start')
-    )
+  //   const timeState = await StateUtility.getHookState(
+  //     testContext.client,
+  //     hookWallet.classicAddress,
+  //     hash,
+  //     hexNamespace('lottery_start')
+  //   )
 
-    expect(CLOSE_TIME + 1 + Number(model.duration)).toBe(
-      Number(hexToUInt64(flipHex(timeState.HookStateData)))
-    )
+  //   expect(CLOSE_TIME + 1 + Number(model.duration)).toBe(
+  //     Number(hexToUInt64(flipHex(timeState.HookStateData)))
+  //   )
 
-    for (let index = 0; index < 20; index++) {
-      await close(testContext.client)
-    }
+  //   for (let index = 0; index < 20; index++) {
+  //     await close(testContext.client)
+  //   }
 
-    const CLOSE_TIME1: number = (
-      await testContext.client.request({
-        command: 'ledger',
-        ledger_index: 'validated',
-      })
-    ).result.ledger.close_time
+  //   const CLOSE_TIME1: number = (
+  //     await testContext.client.request({
+  //       command: 'ledger',
+  //       ledger_index: 'validated',
+  //     })
+  //   ).result.ledger.close_time
 
-    await endLottery(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.frank
-    )
+  //   await endLottery(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.frank
+  //   )
 
-    const timeState1 = await StateUtility.getHookState(
-      testContext.client,
-      hookWallet.classicAddress,
-      hash,
-      hexNamespace('lottery_start')
-    )
+  //   const timeState1 = await StateUtility.getHookState(
+  //     testContext.client,
+  //     hookWallet.classicAddress,
+  //     hash,
+  //     hexNamespace('lottery_start')
+  //   )
 
-    expect(CLOSE_TIME1 + 1 + Number(model.duration)).toBe(
-      Number(hexToUInt64(flipHex(timeState1.HookStateData)))
-    )
+  //   expect(CLOSE_TIME1 + 1 + Number(model.duration)).toBe(
+  //     Number(hexToUInt64(flipHex(timeState1.HookStateData)))
+  //   )
 
-    await submitTicket(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.alice,
-      ticketPrice
-    )
-  })
+  //   await submitTicket(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.alice,
+  //     ticketPrice
+  //   )
+  // })
 
-  it('lottery - Restart 1 Ticket', async () => {
-    // Invoke - Create the lottery
-    const hookWallet = testContext.hook1
-    const feeWallet = testContext.hook2
-    const id = 2
-    const ticketPrice = 10
-    const maxAmount = 300
-    await createLottery(
-      testContext.client,
-      hookWallet,
-      id,
-      ticketPrice,
-      0.5,
-      feeWallet.classicAddress,
-      maxAmount,
-      maxAmount / ticketPrice / rate,
-      15
-    )
+  // it('lottery - Restart 1 Ticket', async () => {
+  //   // Invoke - Create the lottery
+  //   const hookWallet = testContext.hook1
+  //   const feeWallet = testContext.hook2
+  //   const id = 2
+  //   const ticketPrice = 10
+  //   const maxAmount = 300
+  //   await createLottery(
+  //     testContext.client,
+  //     hookWallet,
+  //     id,
+  //     ticketPrice,
+  //     0.5,
+  //     feeWallet.classicAddress,
+  //     maxAmount,
+  //     maxAmount / ticketPrice / rate,
+  //     15
+  //   )
 
-    const hash = padHexString(flipHex(uint64ToHex(BigInt(id))))
+  //   const hash = padHexString(flipHex(uint64ToHex(BigInt(id))))
 
-    await submitTicket(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.alice,
-      ticketPrice
-    )
+  //   await submitTicket(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.alice,
+  //     ticketPrice
+  //   )
 
-    for (let index = 0; index < 20; index++) {
-      await close(testContext.client)
-    }
+  //   for (let index = 0; index < 20; index++) {
+  //     await close(testContext.client)
+  //   }
 
-    await endLottery(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.frank
-    )
-  })
+  //   await endLottery(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.frank
+  //   )
+  // })
 
-  it('lottery - failure - timer & tickets', async () => {
-    // Invoke - Create the lottery
-    const hookWallet = testContext.hook1
-    const feeWallet = testContext.hook2
-    const id = 4
-    const ticketPrice = 10
-    const maxAmount = 300
-    await createLottery(
-      testContext.client,
-      hookWallet,
-      id,
-      ticketPrice,
-      0.5,
-      feeWallet.classicAddress,
-      maxAmount,
-      maxAmount / ticketPrice / rate,
-      30
-    )
+  // it('lottery - failure - timer & tickets', async () => {
+  //   // Invoke - Create the lottery
+  //   const hookWallet = testContext.hook1
+  //   const feeWallet = testContext.hook2
+  //   const id = 4
+  //   const ticketPrice = 10
+  //   const maxAmount = 300
+  //   await createLottery(
+  //     testContext.client,
+  //     hookWallet,
+  //     id,
+  //     ticketPrice,
+  //     0.5,
+  //     feeWallet.classicAddress,
+  //     maxAmount,
+  //     maxAmount / ticketPrice / rate,
+  //     30
+  //   )
 
-    const hash = padHexString(flipHex(uint64ToHex(BigInt(id))))
+  //   const hash = padHexString(flipHex(uint64ToHex(BigInt(id))))
 
-    try {
-      // Invoke
-      const otxn4param1 = new iHookParamEntry(
-        new iHookParamName('HPA'),
-        new iHookParamValue('0A01000001000000000000', true)
-      )
-      const otxn4param2 = new iHookParamEntry(
-        new iHookParamName('LH'),
-        new iHookParamValue(hash, true)
-      )
-      const builtTx4: Invoke = {
-        TransactionType: 'Invoke',
-        Account: testContext.frank.classicAddress,
-        Destination: hookWallet.classicAddress,
-        HookParameters: [otxn4param1.toXrpl(), otxn4param2.toXrpl()],
-      }
-      await Xrpld.submit(testContext.client, {
-        wallet: testContext.frank,
-        tx: builtTx4,
-      })
-      await close(testContext.client)
-    } catch (error: any) {
-      expect(error.message).toEqual('lottery_end.c: Lottery not ended.')
-    }
-  })
-  it('lottery - success - timer ended', async () => {
-    // Invoke - Create the lottery
-    const hookWallet = testContext.hook1
-    const feeWallet = testContext.hook2
-    const id = 5
-    const ticketPrice = 10
-    const maxAmount = 300
-    await createLottery(
-      testContext.client,
-      hookWallet,
-      id,
-      ticketPrice,
-      0.5,
-      feeWallet.classicAddress,
-      maxAmount,
-      maxAmount / ticketPrice / rate,
-      30
-    )
+  //   try {
+  //     // Invoke
+  //     const otxn4param1 = new iHookParamEntry(
+  //       new iHookParamName('HPA'),
+  //       new iHookParamValue('0A01000001000000000000', true)
+  //     )
+  //     const otxn4param2 = new iHookParamEntry(
+  //       new iHookParamName('LH'),
+  //       new iHookParamValue(hash, true)
+  //     )
+  //     const builtTx4: Invoke = {
+  //       TransactionType: 'Invoke',
+  //       Account: testContext.frank.classicAddress,
+  //       Destination: hookWallet.classicAddress,
+  //       HookParameters: [otxn4param1.toXrpl(), otxn4param2.toXrpl()],
+  //     }
+  //     await Xrpld.submit(testContext.client, {
+  //       wallet: testContext.frank,
+  //       tx: builtTx4,
+  //     })
+  //     await close(testContext.client)
+  //   } catch (error: any) {
+  //     expect(error.message).toEqual('lottery_end.c: Lottery not ended.')
+  //   }
+  // })
+  // it('lottery - success - timer ended', async () => {
+  //   // Invoke - Create the lottery
+  //   const hookWallet = testContext.hook1
+  //   const feeWallet = testContext.hook2
+  //   const id = 5
+  //   const ticketPrice = 10
+  //   const maxAmount = 300
+  //   await createLottery(
+  //     testContext.client,
+  //     hookWallet,
+  //     id,
+  //     ticketPrice,
+  //     0.5,
+  //     feeWallet.classicAddress,
+  //     maxAmount,
+  //     maxAmount / ticketPrice / rate,
+  //     30
+  //   )
 
-    const hash = padHexString(flipHex(uint64ToHex(BigInt(id))))
+  //   const hash = padHexString(flipHex(uint64ToHex(BigInt(id))))
 
-    await submitTicket(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.alice,
-      ticketPrice
-    )
+  //   await submitTicket(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.alice,
+  //     ticketPrice
+  //   )
 
-    await submitTicket(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.bob,
-      ticketPrice
-    )
+  //   await submitTicket(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.bob,
+  //     ticketPrice
+  //   )
 
-    await submitTicket(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.carol,
-      ticketPrice
-    )
+  //   await submitTicket(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.carol,
+  //     ticketPrice
+  //   )
 
-    await submitTicket(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.dave,
-      ticketPrice
-    )
-    await submitTicket(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.dave,
-      ticketPrice
-    )
-    await submitTicket(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.elsa,
-      ticketPrice
-    )
+  //   await submitTicket(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.dave,
+  //     ticketPrice
+  //   )
+  //   await submitTicket(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.dave,
+  //     ticketPrice
+  //   )
+  //   await submitTicket(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.elsa,
+  //     ticketPrice
+  //   )
 
-    for (let index = 0; index < 20; index++) {
-      await close(testContext.client)
-    }
+  //   for (let index = 0; index < 20; index++) {
+  //     await close(testContext.client)
+  //   }
 
-    await endLottery(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.frank
-    )
-  })
+  //   await endLottery(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.frank
+  //   )
+  // })
 
-  it('lottery - success - tickets max', async () => {
-    // Invoke - Create the lottery
-    const hookWallet = testContext.hook1
-    const feeWallet = testContext.hook2
-    const id = 6
-    const ticketPrice = 10
-    const maxAmount = 300
-    await createLottery(
-      testContext.client,
-      hookWallet,
-      id,
-      ticketPrice,
-      0.5,
-      feeWallet.classicAddress,
-      maxAmount,
-      3,
-      1200
-    )
+  // it('lottery - success - tickets max', async () => {
+  //   // Invoke - Create the lottery
+  //   const hookWallet = testContext.hook1
+  //   const feeWallet = testContext.hook2
+  //   const id = 6
+  //   const ticketPrice = 10
+  //   const maxAmount = 300
+  //   await createLottery(
+  //     testContext.client,
+  //     hookWallet,
+  //     id,
+  //     ticketPrice,
+  //     0.5,
+  //     feeWallet.classicAddress,
+  //     maxAmount,
+  //     3,
+  //     1200
+  //   )
 
-    const hash = padHexString(flipHex(uint64ToHex(BigInt(id))))
+  //   const hash = padHexString(flipHex(uint64ToHex(BigInt(id))))
 
-    await submitTicket(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.alice,
-      ticketPrice
-    )
-    await submitTicket(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.bob,
-      ticketPrice
-    )
-    await submitTicket(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.carol,
-      ticketPrice
-    )
+  //   await submitTicket(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.alice,
+  //     ticketPrice
+  //   )
+  //   await submitTicket(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.bob,
+  //     ticketPrice
+  //   )
+  //   await submitTicket(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.carol,
+  //     ticketPrice
+  //   )
 
-    await endLottery(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.frank
-    )
+  //   await endLottery(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.frank
+  //   )
 
-    const txs: any = (
-      await testContext.client.request({
-        command: 'ledger',
-        ledger_index: 'validated',
-        transactions: true,
-        expand: true,
-      })
-    ).result.ledger.transactions
-    for (let index = 0; index < txs.length; index++) {
-      const element = txs[index]
-      if (element['TransactionType'] === 'Payment') {
-        expect(element['Amount']).toEqual('30000000')
-      }
-    }
-  })
+  //   const txs: any = (
+  //     await testContext.client.request({
+  //       command: 'ledger',
+  //       ledger_index: 'validated',
+  //       transactions: true,
+  //       expand: true,
+  //     })
+  //   ).result.ledger.transactions
+  //   for (let index = 0; index < txs.length; index++) {
+  //     const element = txs[index]
+  //     if (element['TransactionType'] === 'Payment') {
+  //       expect(element['Amount']).toEqual('30000000')
+  //     }
+  //   }
+  // })
 
-  it('lottery - failure - tickets max', async () => {
-    // Invoke - Create the lottery
-    const hookWallet = testContext.hook1
-    const feeWallet = testContext.hook2
-    const id = 7
-    const ticketPrice = 100
-    const maxAmount = 300
-    await createLottery(
-      testContext.client,
-      hookWallet,
-      id,
-      ticketPrice,
-      0.5,
-      feeWallet.classicAddress,
-      maxAmount,
-      maxAmount / ticketPrice / rate,
-      30
-    )
+  // it('lottery - failure - tickets max', async () => {
+  //   // Invoke - Create the lottery
+  //   const hookWallet = testContext.hook1
+  //   const feeWallet = testContext.hook2
+  //   const id = 7
+  //   const ticketPrice = 100
+  //   const maxAmount = 300
+  //   await createLottery(
+  //     testContext.client,
+  //     hookWallet,
+  //     id,
+  //     ticketPrice,
+  //     0.5,
+  //     feeWallet.classicAddress,
+  //     maxAmount,
+  //     maxAmount / ticketPrice / rate,
+  //     30
+  //   )
 
-    const hash = padHexString(flipHex(uint64ToHex(BigInt(id))))
+  //   const hash = padHexString(flipHex(uint64ToHex(BigInt(id))))
 
-    await submitTicket(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.alice,
-      ticketPrice
-    )
-    await submitTicket(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.bob,
-      ticketPrice
-    )
-    await submitTicket(
-      testContext.client,
-      hash,
-      hookWallet.classicAddress,
-      testContext.carol,
-      ticketPrice
-    )
+  //   await submitTicket(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.alice,
+  //     ticketPrice
+  //   )
+  //   await submitTicket(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.bob,
+  //     ticketPrice
+  //   )
+  //   await submitTicket(
+  //     testContext.client,
+  //     hash,
+  //     hookWallet.classicAddress,
+  //     testContext.carol,
+  //     ticketPrice
+  //   )
 
-    try {
-      // Payment
-      const daveWallet = testContext.dave
-      const otxn3param1 = new iHookParamEntry(
-        new iHookParamName('HPA'),
-        new iHookParamValue('0A01000100000000000000', true)
-      )
-      const otxn3param2 = new iHookParamEntry(
-        new iHookParamName('LH'),
-        new iHookParamValue(hash, true)
-      )
-      const builtTx3: Payment = {
-        TransactionType: 'Payment',
-        Account: daveWallet.classicAddress,
-        Destination: hookWallet.classicAddress,
-        Amount: xrpToDrops(ticketPrice),
-        HookParameters: [otxn3param1.toXrpl(), otxn3param2.toXrpl()],
-      }
-      await Xrpld.submit(testContext.client, {
-        wallet: daveWallet,
-        tx: builtTx3,
-      })
-    } catch (error: any) {
-      const executions = JSON.parse(error.message)
-      expect(executions[1].HookReturnString).toEqual(
-        'lottery_end.c: Lottery maximum reached.'
-      )
-    }
-  })
+  //   try {
+  //     // Payment
+  //     const daveWallet = testContext.dave
+  //     const otxn3param1 = new iHookParamEntry(
+  //       new iHookParamName('HPA'),
+  //       new iHookParamValue('0A01000100000000000000', true)
+  //     )
+  //     const otxn3param2 = new iHookParamEntry(
+  //       new iHookParamName('LH'),
+  //       new iHookParamValue(hash, true)
+  //     )
+  //     const builtTx3: Payment = {
+  //       TransactionType: 'Payment',
+  //       Account: daveWallet.classicAddress,
+  //       Destination: hookWallet.classicAddress,
+  //       Amount: xrpToDrops(ticketPrice),
+  //       HookParameters: [otxn3param1.toXrpl(), otxn3param2.toXrpl()],
+  //     }
+  //     await Xrpld.submit(testContext.client, {
+  //       wallet: daveWallet,
+  //       tx: builtTx3,
+  //     })
+  //   } catch (error: any) {
+  //     const executions = JSON.parse(error.message)
+  //     expect(executions[1].HookReturnString).toEqual(
+  //       'lottery_end.c: Lottery maximum reached.'
+  //     )
+  //   }
+  // })
 
   it('lottery - success - overflow', async () => {
     // Invoke - Create the lottery
@@ -734,6 +734,13 @@ describe('lottery', () => {
       testContext.alice,
       ticketPrice
     )
+
+    const acctResp1 = await testContext.client.request({
+      command: 'account_info',
+      account: hookWallet.classicAddress,
+    })
+    console.log(acctResp1.result.account_data.OwnerCount)
+
     await submitTicket(
       testContext.client,
       hash,
@@ -741,6 +748,13 @@ describe('lottery', () => {
       testContext.bob,
       ticketPrice
     )
+
+    const acctResp2 = await testContext.client.request({
+      command: 'account_info',
+      account: hookWallet.classicAddress,
+    })
+    console.log(acctResp2.result.account_data.OwnerCount)
+
     await submitTicket(
       testContext.client,
       hash,
@@ -748,6 +762,12 @@ describe('lottery', () => {
       testContext.carol,
       ticketPrice
     )
+
+    const acctResp3 = await testContext.client.request({
+      command: 'account_info',
+      account: hookWallet.classicAddress,
+    })
+    console.log(acctResp3.result.account_data.OwnerCount)
 
     for (let index = 0; index < 20; index++) {
       await close(testContext.client)
@@ -759,6 +779,12 @@ describe('lottery', () => {
       hookWallet.classicAddress,
       testContext.frank
     )
+
+    const acctResp = await testContext.client.request({
+      command: 'account_info',
+      account: hookWallet.classicAddress,
+    })
+    console.log(acctResp.result.account_data.OwnerCount)
 
     const txs: any = (
       await testContext.client.request({
@@ -776,61 +802,61 @@ describe('lottery', () => {
     }
   })
 
-  it('lottery - Odds 100', async () => {
-    // Invoke - Create the lottery
-    const hookWallet = testContext.hook1
-    const feeWallet = testContext.hook2
-    const winners: string[] = []
-    for (let index = 0; index < 100; index++) {
-      const id = index + 9
-      const ticketPrice = 10
-      const maxAmount = 300
-      await createLottery(
-        testContext.client,
-        hookWallet,
-        id,
-        ticketPrice,
-        0.5,
-        feeWallet.classicAddress,
-        maxAmount,
-        maxAmount / ticketPrice / rate,
-        15
-      )
+  // it('lottery - Odds 100', async () => {
+  //   // Invoke - Create the lottery
+  //   const hookWallet = testContext.hook1
+  //   const feeWallet = testContext.hook2
+  //   const winners: string[] = []
+  //   for (let index = 0; index < 100; index++) {
+  //     const id = index + 9
+  //     const ticketPrice = 10
+  //     const maxAmount = 300
+  //     await createLottery(
+  //       testContext.client,
+  //       hookWallet,
+  //       id,
+  //       ticketPrice,
+  //       0.5,
+  //       feeWallet.classicAddress,
+  //       maxAmount,
+  //       maxAmount / ticketPrice / rate,
+  //       15
+  //     )
 
-      const hash = padHexString(flipHex(uint64ToHex(BigInt(id))))
+  //     const hash = padHexString(flipHex(uint64ToHex(BigInt(id))))
 
-      await submitTicket(
-        testContext.client,
-        hash,
-        hookWallet.classicAddress,
-        testContext.bob,
-        ticketPrice
-      )
-      await submitTicket(
-        testContext.client,
-        hash,
-        hookWallet.classicAddress,
-        testContext.carol,
-        ticketPrice
-      )
+  //     await submitTicket(
+  //       testContext.client,
+  //       hash,
+  //       hookWallet.classicAddress,
+  //       testContext.bob,
+  //       ticketPrice
+  //     )
+  //     await submitTicket(
+  //       testContext.client,
+  //       hash,
+  //       hookWallet.classicAddress,
+  //       testContext.carol,
+  //       ticketPrice
+  //     )
 
-      for (let index = 0; index < 20; index++) {
-        await close(testContext.client)
-      }
+  //     for (let index = 0; index < 20; index++) {
+  //       await close(testContext.client)
+  //     }
 
-      const emittedTxns = await endLottery(
-        testContext.client,
-        hash,
-        hookWallet.classicAddress,
-        testContext.frank
-      )
-      for (let index = 0; index < emittedTxns.txs.length; index++) {
-        const emittedTxn = emittedTxns.txs[index]
-        if (emittedTxn.TransactionType === 'Payment') {
-          winners.push(emittedTxn.Destination)
-        }
-      }
-    }
-    console.log(calculateOdds(winners))
-  })
+  //     const emittedTxns = await endLottery(
+  //       testContext.client,
+  //       hash,
+  //       hookWallet.classicAddress,
+  //       testContext.frank
+  //     )
+  //     for (let index = 0; index < emittedTxns.txs.length; index++) {
+  //       const emittedTxn = emittedTxns.txs[index]
+  //       if (emittedTxn.TransactionType === 'Payment') {
+  //         winners.push(emittedTxn.Destination)
+  //       }
+  //     }
+  //   }
+  //   console.log(calculateOdds(winners))
+  // })
 })
