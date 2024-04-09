@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 /*
 
-HookParameters:
+HookParameters -> State:
 
 ADM: The admin account (role)
 STL: The settler account (role)
@@ -11,6 +11,9 @@ WKEY: The withdrawer pubkey (role)
 CUR: The currency allowed in the funding source
 ISS: The issuer account allowed in the funding source
 ACC: The settlement account (globally per asset)
+
+for each asset:
+     <20 byte currency><20 byte issuer>: <20 byte settlement address>
 
 Operations:
 
@@ -25,19 +28,23 @@ Operations:
     // M - modify (admin)
     // R - refund (refunder)
     // W - withdraw (user)
+    // A - asset (admin)
 
-// invoke sub ops are: 
+// invoke (Modify) sub ops are:
     // A - modify admin account (role)
-    // B - modify debit account (role)
     // S - modify settler account (role)
     // W - modify withdraw pubkey (role)
 
-
+// invoke (Asset) sub ops are:
+    // C - modify create asset
+    // D - modify delete asset
 
 */
 //==============================================================================
 
 #include "hookapi.h"
+
+#define SVAR(x) &(x), sizeof(x)
 
 #define DONE(x)\
     return accept(SBUF(x), __LINE__)
@@ -171,23 +178,18 @@ int64_t hook(uint32_t r)
         DONE("Monolithic: Passing incoming XAH payment.");
 
     // get admin account (role)
-    uint8_t admin[20];
-    if (hook_param(SBUF(admin), "ADM", 3) != 20)
+    uint8_t _admin[20];
+    if (hook_param(SBUF(_admin), "ADM", 3) != 20)
         NOPE("Monolithic: Misconfigured. Missing ADM install parameter.");
 
     // get settlement account (role)
-    uint8_t stl[20];
-    if (hook_param(SBUF(stl), "STL", 3) != 20)
+    uint8_t _stl[20];
+    if (hook_param(SBUF(_stl), "STL", 3) != 20)
         NOPE("Monolithic: Misconfigured. Missing STL install parameter.");
-    
-    // get refund account (role)
-    uint8_t rfd[20];
-    if (hook_param(SBUF(rfd), "RFD", 3) != 20)
-        NOPE("Monolithic: Misconfigured. Missing RFD install parameter.");
 
     // get the withdrawal signing key
-    uint8_t wkey[33];
-    if (hook_param(SBUF(wkey), "WKEY", 4) != 33)
+    uint8_t _wkey[33];
+    if (hook_param(SBUF(_wkey), "WKEY", 4) != 33)
         NOPE("Monolithic: Misconfigured. Missing WKEY install parameter.");
 
     // get currency
@@ -215,7 +217,7 @@ int64_t hook(uint32_t r)
 
     int64_t xfl_in;
     uint32_t flags;
-    uint8_t dtag[32];
+    uint32_t dtag;
 
     if (tt == ttPAYMENT)
     {
@@ -228,7 +230,7 @@ int64_t hook(uint32_t r)
 
         otxn_field(SBUF(amt), sfAmount);
 
-        if (otxn_field(dtag + 28, 4, sfDestinationTag) != 4)
+        if (otxn_field(SVAR(dtag), sfDestinationTag) != 4)
             NOPE("Monolithic: Destination Tag is Required.");
 
         if (!BUFFER_EQUAL_20(amt + 8, OUTCUR))
@@ -242,24 +244,6 @@ int64_t hook(uint32_t r)
         if (xfl_in < 0 || !float_compare(xfl_in, 0, COMPARE_GREATER))
             NOPE("Monolithic: Invalid sfAmount.");
     }
-
-    int64_t is_admin = BUFFER_EQUAL_20(otxn_accid + 12, admin);
-    int64_t is_stl = BUFFER_EQUAL_20(otxn_accid + 12, stl);
-    int64_t is_rfd = BUFFER_EQUAL_20(otxn_accid + 12, rfd);
-
-    // sanity check
-    if ((op == 'D') && tt != ttPAYMENT)
-        NOPE("Monolithic: Deposit operations must be a payment transaction.");
-
-    // permission check
-    if (!is_admin && (op == 'U' || op == 'P' || op == 'M'))
-        NOPE("Monolithic: Admin only operation.");
-    
-    if (!is_stl && (op == 'B' || op == 'S'))
-        NOPE("Monolithic: Settler only operation.");
-
-    if (!is_rfd && (op == 'R'))
-        NOPE("Monolithic: Refunder only operation.");
 
     // enforced pausedness
     if (op != 'U')
@@ -279,6 +263,30 @@ int64_t hook(uint32_t r)
     // enforce initalisation
     if (!already_setup && op != 'I')
         NOPE("Monolithic: Send op=I initalisation first.");
+
+    uint8_t admin[20];
+    uint8_t stl[20];
+    uint8_t wkey[33];
+    if (already_setup && op != 'I')
+    {
+        state(SBUF(admin), "ADM", 3);
+        state(SBUF(stl), "STL", 3);
+        state(SBUF(wkey), "WKEY", 4);
+    }
+
+    int64_t is_admin = BUFFER_EQUAL_20(otxn_accid + 12, admin);
+    int64_t is_stl = BUFFER_EQUAL_20(otxn_accid + 12, stl);
+
+    // sanity check
+    if ((op == 'D') && tt != ttPAYMENT)
+        NOPE("Monolithic: Deposit operations must be a payment transaction.");
+
+    // permission check
+    if (!is_admin && (op == 'U' || op == 'P' || op == 'M'))
+        NOPE("Monolithic: Admin only operation.");
+    
+    if (!is_stl && (op == 'B' || op == 'S'))
+        NOPE("Monolithic: Settler only operation.");
 
     // current ledger seq is used when emitting a txn
     int64_t seq = ledger_seq() + 1;
@@ -332,6 +340,16 @@ int64_t hook(uint32_t r)
             uint8_t emithash[32];
             int64_t emit_result = emit(SBUF(emithash), txn_out, TXNLEN_TL);
             TRACEVAR(emit_result);
+
+            state_set(_admin, 20, "ADM", 3);
+            state_set(_stl, 20, "STL", 3);
+            state_set(_wkey, 33, "WKEY", 4);
+            
+            // save asset
+            uint8_t asset[40];
+            COPY_20(OUTCUR, asset);
+            COPY_20(OUTISS, asset);
+            state_set(acc, 20, asset, 40);
             DONE("Monolithic: Emitted TrustSet to initialize.");
         }
 
@@ -346,14 +364,15 @@ int64_t hook(uint32_t r)
 
         case 'D':
         {
-            uint8_t dtag_bal[8];
-            state(SBUF(dtag_bal), dtag + 28, 4);
-            int64_t dtag_bal_xfl = *((int64_t*)dtag_bal);
-            
-            int64_t total_dtag_bal_xfl = float_sum(dtag_bal_xfl, xfl_in);
-            INT64_TO_BUF(dtag_bal, FLIP_ENDIAN_64(total_dtag_bal_xfl));
-            if (state_set(dtag_bal, 8, dtag + 28, 4) != 8)
-                NOPE("Monolithic: Insane balance on depositor.");
+            int64_t dtag_bal_xfl;
+            state(SVAR(dtag_bal_xfl), SVAR(dtag));
+
+            int64_t final_bal_xfl = float_sum(dtag_bal_xfl, xfl_in);
+            if (final_bal_xfl < 0)
+                NOPE("Monolithic: Insane balance on deposit.");
+
+            if (state_set(SVAR(final_bal_xfl), SVAR(dtag)) != 8)
+                NOPE("Monolithic: Failed to set state on deposit.");
 
             DONE("Monolithic: Deposited.");
         }
@@ -361,30 +380,26 @@ int64_t hook(uint32_t r)
         // debit
         case 'B':
         {
-            if (otxn_param(dtag + 28, 4, "TAG", 3) != 4)
+            if (otxn_param(SVAR(dtag), "TAG", 3) != 4)
                 NOPE("Monolithic: Misconfigured. Missing TAG otxn parameter.");
 
-            uint8_t xfl_buffer[8];
-            if (otxn_param(xfl_buffer, 8, "AMT", 3) != 8)
+            int64_t sig_amt;
+            if (otxn_param(SVAR(sig_amt), "AMT", 3) != 8 || sig_amt < 0)
                 NOPE("Monolithic: Misconfigured. Missing AMT otxn parameter.");
-            uint64_t sig_amt = *((uint64_t*)(xfl_buffer));
 
-            uint8_t nonce_buffer[4];
-            if (otxn_param(nonce_buffer, 4, "SEQ", 3) != 4)
+            uint32_t sig_nce;
+            if (otxn_param(SVAR(sig_nce), "SEQ", 3) != 4)
                 NOPE("Monolithic: Misconfigured. Missing SEQ otxn parameter.");
-            uint32_t sig_nce = *((uint32_t*)(nonce_buffer));
 
             // check the nonce
-            uint64_t dbt_seq;
-            state(&dbt_seq, 8, otxn_accid + 12, 20);
-            TRACEVAR(dbt_seq);
+            uint32_t dbt_seq;
+            state(SVAR(dbt_seq), otxn_accid + 12, 20);
 
             if (dbt_seq != sig_nce)
                 NOPE("Monolithic: Debit nonce out of sequence.");
 
-            uint8_t dtag_bal[8];
-            state(SBUF(dtag_bal), dtag + 28, 4);
-            int64_t dtag_bal_xfl = *((int64_t*)dtag_bal);
+            int64_t dtag_bal_xfl;
+            state(SVAR(dtag_bal_xfl), SVAR(dtag));
 
             // check dtag balance
             if (dtag_bal_xfl <= 0 || !float_compare(dtag_bal_xfl, 0, COMPARE_GREATER))
@@ -397,17 +412,15 @@ int64_t hook(uint32_t r)
                 NOPE("Monolithic: Balance not high enough for this debit.");
 
             int64_t sub_dtag_bal_xfl = float_sum(dtag_bal_xfl, float_negate(sig_amt));
-            INT64_TO_BUF(dtag_bal, FLIP_ENDIAN_64(sub_dtag_bal_xfl));
-            if (state_set(dtag_bal, 8, dtag + 28, 4) != 8)
+            if (state_set(SVAR(sub_dtag_bal_xfl), SVAR(dtag)) != 8)
                 NOPE("Monolithic: Insane balance on dtag.");
 
             int64_t add_stl_bal_xfl = float_sum(stl_bal_xfl, sig_amt);
-            INT64_TO_BUF(stl_bal, FLIP_ENDIAN_64(add_stl_bal_xfl));
-            if (state_set(stl_bal, 8, hook_accid + 12, 20) != 8)
+            if (state_set(SVAR(add_stl_bal_xfl), hook_accid + 12, 20) != 8)
                 NOPE("Monolithic: Insane balance on stl.");
 
             dbt_seq++;
-            if (state_set(&dbt_seq, 8, otxn_accid + 12, 20) != 8)
+            if (state_set(SVAR(dbt_seq), otxn_accid + 12, 20) != 4)
                 NOPE("Monolithic: Failed to set state.");
 
             DONE("Monolithic: Debited.");
@@ -432,20 +445,17 @@ int64_t hook(uint32_t r)
             // set the destination addr to the settlement addr
             COPY_20(acc, DESTACC);
 
-            uint8_t xfl_buffer[8];
-            if (otxn_param(xfl_buffer, 8, "AMT", 3) != 8)
+            int64_t sig_amt;
+            if (otxn_param(SVAR(sig_amt), "AMT", 3) != 8 || sig_amt < 0)
                 NOPE("Monolithic: Misconfigured. Missing AMT otxn parameter.");
-            uint64_t sig_amt = *((uint64_t*)(xfl_buffer));
 
-            uint8_t nonce_buffer[4];
-            if (otxn_param(dtag + 28, 4, "SEQ", 3) != 4)
+            uint32_t sig_nce;
+            if (otxn_param(SVAR(sig_nce), "SEQ", 3) != 4)
                 NOPE("Monolithic: Misconfigured. Missing SEQ otxn parameter.");
-            uint32_t sig_nce = *((uint32_t*)(nonce_buffer));
 
             // check the nonce
-            uint64_t stl_seq;
-            state(&stl_seq, 8, otxn_accid + 12, 20);
-            TRACEVAR(stl_seq);
+            uint32_t stl_seq;
+            state(SVAR(stl_seq), otxn_accid + 12, 20);
 
             if (stl_seq != sig_nce)
                 NOPE("Monolithic: Settlement nonce out of sequence.");
@@ -458,9 +468,8 @@ int64_t hook(uint32_t r)
             if (float_compare(sig_amt, xfl_bal, COMPARE_GREATER))
                 NOPE("Monolithic: Balance not high enough for this settlement.");
 
-            int64_t xfl_out = sig_amt;
             // write payment amount
-            float_sto(OUTAMT, 49, OUTCUR, 20, OUTISS, 20, xfl_out, sfAmount);
+            float_sto(OUTAMT, 49, OUTCUR, 20, OUTISS, 20, sig_amt, sfAmount);
 
             etxn_details(EMITDET, 138);
             int64_t fee = etxn_fee_base(txn_out, TXNLEN);
@@ -488,12 +497,11 @@ int64_t hook(uint32_t r)
             }
 
             int64_t sub_stl_bal_xfl = float_sum(stl_bal_xfl, float_negate(sig_amt));
-            INT64_TO_BUF(stl_bal, FLIP_ENDIAN_64(sub_stl_bal_xfl));
-            if (state_set(stl_bal, 8, hook_accid + 12, 20) != 8)
+            if (state_set(SVAR(sub_stl_bal_xfl), hook_accid + 12, 20) != 8)
                 NOPE("Monolithic: Insane balance on stl.");
 
             stl_seq++;
-            if (state_set(&stl_seq, 8, otxn_accid + 12, 20) != 8)
+            if (state_set(SVAR(stl_seq), otxn_accid + 12, 20) != 4)
                 NOPE("Monolithic: Failed to set state.");
 
             DONE("Monolithic: Emitted settlement.");
@@ -533,12 +541,8 @@ int64_t hook(uint32_t r)
             TRACEVAR(sig_dtag);
             
             // check dtag balance
-            uint8_t dtag_bal[8];
-            UINT32_TO_BUF(dtag + 28, sig_dtag);
-            TRACEHEX(dtag);
-            state(SBUF(dtag_bal), dtag + 28, 4);
-            int64_t dtag_bal_xfl = *((int64_t*)dtag_bal);
-            TRACEVAR(dtag_bal_xfl);
+            int64_t dtag_bal_xfl;
+            state(SVAR(dtag_bal_xfl), SVAR(sig_dtag));
 
             if (sig_len <= 0)
                 NOPE("Monolithic: Missing SIG parameter.");
@@ -551,8 +555,9 @@ int64_t hook(uint32_t r)
                 NOPE("Monolithic: Wrong account for ticket.");
 
             // check the nonce
-            uint64_t wth_seq;
-            state(&wth_seq, 8, otxn_accid + 12, 20);
+            uint32_t wth_seq;
+            state(SVAR(wth_seq), otxn_accid + 12, 20);
+            TRACEVAR(wth_seq);
 
             if (wth_seq != sig_nce)
                 NOPE("Monolithic: Nonce out of sequence.");
@@ -561,10 +566,8 @@ int64_t hook(uint32_t r)
             if (float_compare(sig_amt, dtag_bal_xfl, COMPARE_GREATER))
                 NOPE("Monolithic: Balance not high enough for this withdrawal.");
 
-            int64_t xfl_out = sig_amt;
-
             // write payment amount
-            float_sto(OUTAMT, 49, OUTCUR, 20, OUTISS, 20, xfl_out, sfAmount);
+            float_sto(OUTAMT, 49, OUTCUR, 20, OUTISS, 20, sig_amt, sfAmount);
 
             etxn_details(EMITDET, 138);
             int64_t fee = etxn_fee_base(txn_out, TXNLEN);
@@ -588,17 +591,16 @@ int64_t hook(uint32_t r)
             int64_t emit_result = emit(SBUF(emithash), txn_out, TXNLEN);
             if (emit_result < 0)
             {
-                NOPE("Monolithic: Settle Emitted Failure.");
+                NOPE("Monolithic: Withdrawal Emitted Failure.");
             }
 
             int64_t sub_stl_bal_xfl = float_sum(stl_bal_xfl, float_negate(sig_amt));
-            INT64_TO_BUF(stl_bal, FLIP_ENDIAN_64(sub_stl_bal_xfl));
-            if (state_set(stl_bal, 8, hook_accid + 12, 20) != 8)
+            if (state_set(SVAR(sub_stl_bal_xfl), hook_accid + 12, 20) != 8)
                 NOPE("Monolithic: Insane balance on stl.");
 
             // update nonce
             wth_seq++;
-            if (state_set(&wth_seq, 8, otxn_accid + 12, 20) != 8)
+            if (state_set(SVAR(wth_seq), otxn_accid + 12, 20) != 4)
                 NOPE("Monolithic: Failed to set state.");
 
             DONE("Monolithic: Emitted withdrawal.");
@@ -608,22 +610,20 @@ int64_t hook(uint32_t r)
         // refund
         case 'R':
         {
-            if (otxn_param(dtag + 28, 4, "TAG", 3) != 4)
+            if (otxn_param(SVAR(dtag), "TAG", 3) != 4)
                 NOPE("Monolithic: Misconfigured. Missing TAG otxn parameter.");
 
-            uint8_t xfl_buffer[8];
-            if (otxn_param(xfl_buffer, 8, "AMT", 3) != 8)
+            int64_t sig_amt;
+            if (otxn_param(SVAR(sig_amt), "AMT", 3) != 8 || sig_amt < 0)
                 NOPE("Monolithic: Misconfigured. Missing AMT otxn parameter.");
-            uint64_t sig_amt = *((uint64_t*)(xfl_buffer));
 
-            uint8_t nonce_buffer[4];
-            if (otxn_param(nonce_buffer, 4, "SEQ", 3) != 4)
+            uint32_t sig_nce;
+            if (otxn_param(SVAR(sig_nce), "SEQ", 3) != 4)
                 NOPE("Monolithic: Misconfigured. Missing SEQ otxn parameter.");
-            uint32_t sig_nce = *((uint32_t*)(nonce_buffer));
 
             // check the nonce
-            uint64_t rfd_seq;
-            state(&rfd_seq, 8, otxn_accid + 12, 20);
+            uint32_t rfd_seq;
+            state(SVAR(rfd_seq), otxn_accid + 12, 20);
             TRACEVAR(rfd_seq);
 
             if (rfd_seq != sig_nce)
@@ -644,17 +644,15 @@ int64_t hook(uint32_t r)
                 NOPE("Monolithic: Balance not high enough for this debit.");
 
             int64_t add_dtag_bal_xfl = float_sum(dtag_bal_xfl, sig_amt);
-            INT64_TO_BUF(dtag_bal, FLIP_ENDIAN_64(add_dtag_bal_xfl));
-            if (state_set(dtag_bal, 8, dtag + 28, 4) != 8)
+            if (state_set(SVAR(add_dtag_bal_xfl), SVAR(dtag)) != 8)
                 NOPE("Monolithic: Insane balance on dtag.");
 
             int64_t sub_stl_bal_xfl = float_sum(stl_bal_xfl, float_negate(sig_amt));
-            INT64_TO_BUF(stl_bal, FLIP_ENDIAN_64(sub_stl_bal_xfl));
-            if (state_set(stl_bal, 8, hook_accid + 12, 20) != 8)
+            if (state_set(SVAR(sub_stl_bal_xfl), hook_accid + 12, 20) != 8)
                 NOPE("Monolithic: Insane balance on stl.");
 
             rfd_seq++;
-            if (state_set(&rfd_seq, 8, otxn_accid + 12, 20) != 8)
+            if (state_set(SVAR(rfd_seq), otxn_accid + 12, 20) != 4)
                 NOPE("Monolithic: Failed to set state.");
 
             DONE("Monolithic: Refunded.");
@@ -666,15 +664,23 @@ int64_t hook(uint32_t r)
             switch (op)
             {
                 case 'A': // admin (role)
-                case 'B': // debit (role)
+                {
+                    uint8_t account[20];
+                    if (otxn_param(SBUF(account), "ACC", 3) != 20)
+                        NOPE("Monolithic: Misconfigured. Missing ACC modify parameter.");
+
+                    state_set(account, 20, "ADM", 3);
+                    DONE("Monolithic: ADM Modified.");
+                }
+
                 case 'S': // settler (role)
                 {
                     uint8_t account[20];
                     if (otxn_param(SBUF(account), "ACC", 3) != 20)
                         NOPE("Monolithic: Misconfigured. Missing ACC modify parameter.");
-                    
-                    // state_set();
-                    DONE("Monolithic: Modified.");
+
+                    state_set(account, 20, "STL", 3);
+                    DONE("Monolithic: STL Modified.");
                 }
 
                 case 'W': // withdraw (role)
@@ -683,8 +689,49 @@ int64_t hook(uint32_t r)
                     if (otxn_param(SBUF(key), "WKEY", 4) != 33)
                         NOPE("Monolithic: Misconfigured. Missing KEY modify parameter.");
                     
-                    // state_set();
-                    DONE("Monolithic: Modified.");
+                    state_set(key, 33, "WKEY", 4);
+                    DONE("Monolithic: WKEY Modified.");
+                }
+
+                default:
+                {
+                    NOPE("Monolithic: Unknown operation.");
+                }
+            }
+        }
+    
+        case 'A':
+        {
+            switch (op)
+            {
+                case 'C': // asset (create)
+                {
+                    uint8_t account[20];
+                    if (otxn_param(SBUF(account), "ACC", 3) != 20)
+                        NOPE("Monolithic: Misconfigured. Missing ACC modify parameter.");
+
+                    state_set(account, 20, "ADM", 3);
+                    DONE("Monolithic: ADM Modified.");
+                }
+
+                case 'U': // asset (update)
+                {
+                    uint8_t account[20];
+                    if (otxn_param(SBUF(account), "ACC", 3) != 20)
+                        NOPE("Monolithic: Misconfigured. Missing ACC modify parameter.");
+
+                    state_set(account, 20, "ADM", 3);
+                    DONE("Monolithic: ADM Modified.");
+                }
+
+                case 'D': // asset (destroy)
+                {
+                    uint8_t account[20];
+                    if (otxn_param(SBUF(account), "ACC", 3) != 20)
+                        NOPE("Monolithic: Misconfigured. Missing ACC modify parameter.");
+
+                    state_set(account, 20, "STL", 3);
+                    DONE("Monolithic: STL Modified.");
                 }
 
                 default:

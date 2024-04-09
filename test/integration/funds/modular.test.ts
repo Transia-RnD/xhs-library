@@ -31,10 +31,10 @@ import {
 } from '@transia/hooks-toolkit'
 import {
   currencyToHex,
+  hexToUInt32,
+  uint32ToHex,
   xflToHex,
   xrpAddressToHex,
-  uint32ToHex,
-  hexToUInt32,
 } from '@transia/hooks-toolkit/dist/npm/src/libs/binary-models'
 import { IssuedCurrencyAmount } from '@transia/xrpl/dist/npm/models/common'
 import { sign, verify } from '@transia/ripple-keypairs'
@@ -58,13 +58,14 @@ export async function getNextNonce(
   }
 }
 
-describe('funds - Success Group', () => {
+describe('modular - Success Group', () => {
   let testContext: XrplIntegrationTestContext
 
   beforeAll(async () => {
     testContext = await setupClient(serverUrl)
-    const hookWallet = testContext.hook1
-    // const userWallet = testContext.alice
+
+    const masterHook = testContext.hook1
+    const userHook = testContext.hook2
     const settlementWallet = testContext.bob
 
     const adminWallet = testContext.frank
@@ -103,12 +104,12 @@ describe('funds - Success Group', () => {
         true
       )
     )
-    const hook1 = createHookPayload({
+    const mhook1 = createHookPayload({
       version: 0,
-      createFile: 'monolithic',
+      createFile: 'master',
       namespace: 'funds',
       flags: SetHookFlags.hsfOverride,
-      hookOnArray: ['Invoke', 'Payment'],
+      hookOnArray: ['Invoke'],
       hookParams: [
         hookParam1.toXrpl(),
         hookParam2.toXrpl(),
@@ -121,17 +122,30 @@ describe('funds - Success Group', () => {
     })
     await setHooksV3({
       client: testContext.client,
-      seed: hookWallet.seed,
-      hooks: [{ Hook: hook1 }],
+      seed: masterHook.seed,
+      hooks: [{ Hook: mhook1 }],
+    } as SetHookParams)
+
+    const uhook1 = createHookPayload({
+      version: 0,
+      createFile: 'user',
+      namespace: 'funds',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke', 'Payment'],
+    })
+    await setHooksV3({
+      client: testContext.client,
+      seed: userHook.seed,
+      hooks: [{ Hook: uhook1 }],
     } as SetHookParams)
   })
   afterAll(async () => {
     teardownClient(testContext)
   })
 
-  it('operation - initialize', async () => {
+  it('operation (master) - initialize', async () => {
     const hookWallet = testContext.hook1
-    const adminWallet = testContext.frank
+    const aliceWallet = testContext.alice
     const otxnParam1 = new iHookParamEntry(
       new iHookParamName('OP'),
       new iHookParamValue('I')
@@ -142,12 +156,12 @@ describe('funds - Success Group', () => {
     )
     const builtTx: Invoke = {
       TransactionType: 'Invoke',
-      Account: adminWallet.classicAddress,
+      Account: aliceWallet.classicAddress,
       Destination: hookWallet.classicAddress,
       HookParameters: [otxnParam1.toXrpl(), otxnParam2.toXrpl()],
     }
     const result = await Xrpld.submit(testContext.client, {
-      wallet: adminWallet,
+      wallet: aliceWallet,
       tx: builtTx,
     })
     const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
@@ -156,7 +170,38 @@ describe('funds - Success Group', () => {
     )
     await close(testContext.client)
     expect(hookExecutions.executions[0].HookReturnString).toEqual(
-      'Monolithic: Emitted TrustSet to initialize.'
+      'Master: Emitted TrustSet to initialize.'
+    )
+  })
+
+  it('operation (user) - initialize', async () => {
+    const hookWallet = testContext.hook2
+    const aliceWallet = testContext.alice
+    const otxnParam1 = new iHookParamEntry(
+      new iHookParamName('OP'),
+      new iHookParamValue('I')
+    )
+    const otxnParam2 = new iHookParamEntry(
+      new iHookParamName('AMT'),
+      new iHookParamValue(xflToHex(100000), true)
+    )
+    const builtTx: Invoke = {
+      TransactionType: 'Invoke',
+      Account: aliceWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      HookParameters: [otxnParam1.toXrpl(), otxnParam2.toXrpl()],
+    }
+    const result = await Xrpld.submit(testContext.client, {
+      wallet: aliceWallet,
+      tx: builtTx,
+    })
+    const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
+      testContext.client,
+      result.meta as TransactionMetadata
+    )
+    await close(testContext.client)
+    expect(hookExecutions.executions[0].HookReturnString).toEqual(
+      'User: Emitted TrustSet to initialize.'
     )
   })
 
@@ -182,7 +227,7 @@ describe('funds - Success Group', () => {
       result1.meta as TransactionMetadata
     )
     expect(hookExecutions1.executions[0].HookReturnString).toEqual(
-      'Monolithic: Paused/Unpaused.'
+      'Master: Paused/Unpaused.'
     )
     const otxn2Param1 = new iHookParamEntry(
       new iHookParamName('OP'),
@@ -203,12 +248,12 @@ describe('funds - Success Group', () => {
       result2.meta as TransactionMetadata
     )
     expect(hookExecutions2.executions[0].HookReturnString).toEqual(
-      'Monolithic: Paused/Unpaused.'
+      'Master: Paused/Unpaused.'
     )
   })
   it('operation - user deposit', async () => {
-    const hookWallet = testContext.hook1
-    const userWallet = testContext.alice
+    const hookWallet = testContext.hook2
+    const aliceWallet = testContext.alice
 
     const amount: IssuedCurrencyAmount = {
       issuer: testContext.ic.issuer,
@@ -219,19 +264,15 @@ describe('funds - Success Group', () => {
       new iHookParamName('OP'),
       new iHookParamValue('D')
     )
-    const otxnParam2 = new iHookParamEntry(
-      new iHookParamName('FS'),
-      new iHookParamValue(xrpAddressToHex(userWallet.classicAddress), true)
-    )
     const builtTx: Payment = {
       TransactionType: 'Payment',
-      Account: userWallet.classicAddress,
+      Account: aliceWallet.classicAddress,
       Destination: hookWallet.classicAddress,
       Amount: amount,
-      HookParameters: [otxnParam1.toXrpl(), otxnParam2.toXrpl()],
+      HookParameters: [otxnParam1.toXrpl()],
     }
     const result = await Xrpld.submit(testContext.client, {
-      wallet: userWallet,
+      wallet: aliceWallet,
       tx: builtTx,
     })
     const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
@@ -239,32 +280,29 @@ describe('funds - Success Group', () => {
       result.meta as TransactionMetadata
     )
     expect(hookExecutions.executions[0].HookReturnString).toEqual(
-      'Monolithic: Deposited.'
+      'User: Deposited.'
     )
   })
+
   it('operation - debit', async () => {
-    const hookWallet = testContext.hook1
-    const userWallet = testContext.alice
+    const hookWallet = testContext.hook2
     const settlerInvoker = testContext.grace
 
+    const amount = 10
     const otxnParam1 = new iHookParamEntry(
       new iHookParamName('OP'),
       new iHookParamValue('B')
     )
     const otxnParam2 = new iHookParamEntry(
-      new iHookParamName('FS'),
-      new iHookParamValue(xrpAddressToHex(userWallet.classicAddress), true)
-    )
-    const otxnParam3 = new iHookParamEntry(
       new iHookParamName('AMT'),
-      new iHookParamValue(xflToHex(10), true)
+      new iHookParamValue(xflToHex(amount), true)
     )
     const nonce = await getNextNonce(
       testContext.client,
       hookWallet.classicAddress,
       settlerInvoker.classicAddress
     )
-    const otxnParam4 = new iHookParamEntry(
+    const otxnParam3 = new iHookParamEntry(
       new iHookParamName('SEQ'),
       new iHookParamValue(flipHex(uint32ToHex(nonce)), true)
     )
@@ -276,7 +314,6 @@ describe('funds - Success Group', () => {
         otxnParam1.toXrpl(),
         otxnParam2.toXrpl(),
         otxnParam3.toXrpl(),
-        otxnParam4.toXrpl(),
       ],
     }
     const result = await Xrpld.submit(testContext.client, {
@@ -289,63 +326,12 @@ describe('funds - Success Group', () => {
     )
     await close(testContext.client)
     expect(hookExecutions.executions[0].HookReturnString).toEqual(
-      'Monolithic: Debited.'
-    )
-  })
-
-  it('operation - settlement', async () => {
-    const hookWallet = testContext.hook1
-    const userWallet = testContext.alice
-    const settlerInvoker = testContext.grace
-
-    const otxnParam1 = new iHookParamEntry(
-      new iHookParamName('OP'),
-      new iHookParamValue('S')
-    )
-    const otxnParam2 = new iHookParamEntry(
-      new iHookParamName('FS'),
-      new iHookParamValue(xrpAddressToHex(userWallet.classicAddress), true)
-    )
-    const otxnParam3 = new iHookParamEntry(
-      new iHookParamName('AMT'),
-      new iHookParamValue(xflToHex(10), true)
-    )
-    const nonce = await getNextNonce(
-      testContext.client,
-      hookWallet.classicAddress,
-      settlerInvoker.classicAddress
-    )
-    const otxnParam4 = new iHookParamEntry(
-      new iHookParamName('SEQ'),
-      new iHookParamValue(flipHex(uint32ToHex(nonce)), true)
-    )
-    const builtTx: Invoke = {
-      TransactionType: 'Invoke',
-      Account: settlerInvoker.classicAddress,
-      Destination: hookWallet.classicAddress,
-      HookParameters: [
-        otxnParam1.toXrpl(),
-        otxnParam2.toXrpl(),
-        otxnParam3.toXrpl(),
-        otxnParam4.toXrpl(),
-      ],
-    }
-    const result = await Xrpld.submit(testContext.client, {
-      wallet: settlerInvoker,
-      tx: builtTx,
-    })
-    const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
-      testContext.client,
-      result.meta as TransactionMetadata
-    )
-    await close(testContext.client)
-    expect(hookExecutions.executions[0].HookReturnString).toEqual(
-      'Monolithic: Emitted settlement.'
+      'User: Emitted debit.'
     )
   })
 
   it('operation - user withdrawal (approval)', async () => {
-    const hookWallet = testContext.hook1
+    const hookWallet = testContext.hook2
     const userWallet = testContext.alice
     const withdrawInvoker = testContext.ivan
 
@@ -397,11 +383,11 @@ describe('funds - Success Group', () => {
     )
     await close(testContext.client)
     expect(hookExecutions.executions[0].HookReturnString).toEqual(
-      'Monolithic: Emitted approval withdrawal.'
+      'User: Emitted approval withdrawal.'
     )
   })
   it('operation - user withdrawal (intent)', async () => {
-    const hookWallet = testContext.hook1
+    const hookWallet = testContext.hook2
     const userWallet = testContext.alice
 
     const amount = 5
@@ -414,10 +400,6 @@ describe('funds - Success Group', () => {
       new iHookParamValue('I')
     )
     const otxnParam3 = new iHookParamEntry(
-      new iHookParamName('FS'),
-      new iHookParamValue(xrpAddressToHex(userWallet.classicAddress), true)
-    )
-    const otxnParam4 = new iHookParamEntry(
       new iHookParamName('AMT'),
       new iHookParamValue(xflToHex(amount), true)
     )
@@ -426,7 +408,7 @@ describe('funds - Success Group', () => {
       hookWallet.classicAddress,
       userWallet.classicAddress
     )
-    const otxnParam5 = new iHookParamEntry(
+    const otxnParam4 = new iHookParamEntry(
       new iHookParamName('SEQ'),
       new iHookParamValue(flipHex(uint32ToHex(nonce)), true)
     )
@@ -439,7 +421,6 @@ describe('funds - Success Group', () => {
         otxnParam2.toXrpl(),
         otxnParam3.toXrpl(),
         otxnParam4.toXrpl(),
-        otxnParam5.toXrpl(),
       ],
     }
     const result = await Xrpld.submit(testContext.client, {
@@ -452,11 +433,11 @@ describe('funds - Success Group', () => {
     )
     await close(testContext.client)
     expect(hookExecutions.executions[0].HookReturnString).toEqual(
-      'Monolithic: Created permissionless withdraw intent.'
+      'User: Created permissionless withdraw intent.'
     )
   })
   it('operation - user withdrawal (execute)', async () => {
-    const hookWallet = testContext.hook1
+    const hookWallet = testContext.hook2
     const userWallet = testContext.alice
 
     const otxnParam1 = new iHookParamEntry(
@@ -475,7 +456,8 @@ describe('funds - Success Group', () => {
     const otxnParam3 = new iHookParamEntry(
       new iHookParamName('WI'),
       new iHookParamValue(
-        xrpAddressToHex(userWallet.classicAddress) + uint32ToHex(nonce - 1),
+        xrpAddressToHex(userWallet.classicAddress) +
+          uint32ToHex(nonce === 0 ? 0 : nonce - 1),
         true
       )
     )
@@ -499,58 +481,7 @@ describe('funds - Success Group', () => {
     )
     await close(testContext.client)
     expect(hookExecutions.executions[0].HookReturnString).toEqual(
-      'Monolithic: Emitted permissionless withdrawal.'
-    )
-  })
-
-  it('operation - refund', async () => {
-    const hookWallet = testContext.hook1
-    const userWallet = testContext.alice
-    const settlerInvoker = testContext.grace
-
-    const otxnParam1 = new iHookParamEntry(
-      new iHookParamName('OP'),
-      new iHookParamValue('R')
-    )
-    const otxnParam2 = new iHookParamEntry(
-      new iHookParamName('FS'),
-      new iHookParamValue(xrpAddressToHex(userWallet.classicAddress), true)
-    )
-    const otxnParam3 = new iHookParamEntry(
-      new iHookParamName('AMT'),
-      new iHookParamValue(xflToHex(10), true)
-    )
-    const nonce = await getNextNonce(
-      testContext.client,
-      hookWallet.classicAddress,
-      settlerInvoker.classicAddress
-    )
-    const otxnParam4 = new iHookParamEntry(
-      new iHookParamName('SEQ'),
-      new iHookParamValue(flipHex(uint32ToHex(nonce)), true)
-    )
-    const builtTx: Invoke = {
-      TransactionType: 'Invoke',
-      Account: settlerInvoker.classicAddress,
-      Destination: hookWallet.classicAddress,
-      HookParameters: [
-        otxnParam1.toXrpl(),
-        otxnParam2.toXrpl(),
-        otxnParam3.toXrpl(),
-        otxnParam4.toXrpl(),
-      ],
-    }
-    const result = await Xrpld.submit(testContext.client, {
-      wallet: settlerInvoker,
-      tx: builtTx,
-    })
-    const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
-      testContext.client,
-      result.meta as TransactionMetadata
-    )
-    await close(testContext.client)
-    expect(hookExecutions.executions[0].HookReturnString).toEqual(
-      'Monolithic: Refunded.'
+      'User: Emitted permissionless withdrawal.'
     )
   })
 })
