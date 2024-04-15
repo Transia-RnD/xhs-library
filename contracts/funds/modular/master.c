@@ -8,9 +8,9 @@ STL: The settler account (role)
 RFD: The refunder account (role)
 WKEY: The withdrawer pubkey (role)
 
-CUR: The currency allowed in the funding source
-ISS: The issuer account allowed in the funding source
-ACC: The settlement account (globally per asset)
+Asset States
+KEY: <hash>(<20 bytes currency><20 bytes issuer>)
+DATA: <settlement address(<20 byte address>)
 
 Operations:
 
@@ -19,12 +19,19 @@ Operations:
     // S - settle (settler)
     // U/P - un/pause (admin)
     // M - modify (admin)
+    // A - asset (admin)
     // R - refund (refunder)
 
 // invoke (Modify) sub ops are:
     // A - modify admin account (role)
     // S - modify settler account (role)
     // W - modify withdraw pubkey (role)
+    // D - modify withdraw delay
+
+// invoke (Asset) sub ops are:
+    // C - create asset (integration) - Set TrustLine ~
+    // U - update asset (integration) - Update Settlement Address
+    // D - delete asset (integration) - Set Trustline 0
 
 */
 //==============================================================================
@@ -152,17 +159,8 @@ int64_t hook(uint32_t r)
         DONE("Master: passing outgoing txn");
 
     int64_t tt = otxn_type();
-    if (tt != ttINVOKE && tt != ttPAYMENT)
-        NOPE("Master: Rejecting non-Invoke, non-Payment txn.");
-
-    otxn_slot(1);
-
-    slot_subfield(1, sfAmount, 2);
-
-    uint8_t amt[48];
-
-    if (slot_size(2) == 8)
-        DONE("Master: Passing incoming XAH payment.");
+    if (tt != ttINVOKE)
+        NOPE("Master: Rejecting non-Invoke txn.");
 
     // get admin account (role)
     uint8_t _admin[20];
@@ -179,28 +177,10 @@ int64_t hook(uint32_t r)
     if (hook_param(SBUF(_wkey), "WKEY", 4) != 33)
         NOPE("Master: Misconfigured. Missing WKEY install parameter.");
 
-    // get currency
-    if (hook_param(OUTCUR, 20, "CUR", 3) != 20)
-        NOPE("Master: Misconfigured. Missing CUR install parameter.");
-
-    // get currency issuer
-    if (hook_param(OUTISS, 20, "ISS", 3) != 20)
-        NOPE("Master: Misconfigured. Missing ISS install parameter.");
-
-    // get settlement account (asset settlement account)
-    uint8_t _acc[20];
-    if (hook_param(SBUF(_acc), "ACC", 3) != 20)
-        NOPE("Master: Misconfigured. Missing ACC install parameter.");
-    
     // get withdraw delay
     int64_t _delay;
-    if (hook_param(SVAR(_delay), "DLY", 3) != 8)
-        NOPE("Master: Misconfigured. Missing ACC install parameter.");
-    
-    // get partner account
-    // uint8_t _prt[20];
-    // if (hook_param(SBUF(_prt), "PTR", 3) != 20)
-    //     NOPE("Master: Misconfigured. Missing PTR install parameter.");
+    if (hook_param(SVAR(_delay), "DLY", 3) != 4)
+        NOPE("Master: Misconfigured. Missing DLY install parameter.");
 
     // Operation
     uint8_t op;
@@ -209,12 +189,11 @@ int64_t hook(uint32_t r)
     
     // Sub Operation
     uint8_t sop;
-    if (op == 'M' && otxn_param(&sop, 1, "SOP", 3) != 1)
+    if (op == 'M' || op == 'A' && otxn_param(&sop, 1, "SOP", 3) != 1)
         NOPE("Master: Missing SOP parameter on Invoke.");
 
     int64_t xfl_in;
     uint32_t flags;
-    uint32_t dtag;
 
     // enforced pausedness
     if (op != 'U')
@@ -225,22 +204,27 @@ int64_t hook(uint32_t r)
             NOPE("Master: Paused.");
     }
 
-    // check if the trustline exists
-    uint8_t keylet[34];
-    util_keylet(keylet, 34, KEYLET_LINE, hook_accid + 12, 20, OUTISS, 20, OUTCUR, 20);
-
-    int64_t already_setup = (slot_set(SBUF(keylet), 10) == 10);
-
-    // enforce initalisation
-    if (!already_setup && op != 'I')
-        NOPE("Master: Send op=I initalisation first.");
-
+    // // enforce initalisation
+    // if (!already_setup && op != 'I')
+    //     NOPE("Master: Send op=I initalisation first.");
+    
     uint8_t admin[20];
     uint8_t stl[20];
     uint8_t wkey[33];
     uint8_t acc[20];
     int64_t delay;
-    if (already_setup && op != 'I')
+    if (state(SBUF(admin), "ADM", 3) == DOESNT_EXIST)
+    {
+        *admin = _admin;
+        state_set(_admin, 20, "ADM", 3);
+        *stl = _stl;
+        state_set(_stl, 20, "STL", 3);
+        *wkey = _wkey;
+        state_set(_wkey, 33, "WKEY", 4);
+        delay = _delay;
+        state_set(SVAR(_delay), "DLY", 3);
+    }
+    else
     {
         state(SBUF(admin), "ADM", 3);
         state(SBUF(stl), "STL", 3);
@@ -265,56 +249,94 @@ int64_t hook(uint32_t r)
     // action
     switch (op)
     {
-        case 'I':
+        case 'A':
         {
-            if (already_setup)
-                DONE("Master: Already setup trustline.");
+            switch (sop)
+            {
+                case 'C': // create asset (integration)
+                {
+                    ACCOUNT_TO_BUF(HOOKACC, hook_accid + 12);
 
-            ACCOUNT_TO_BUF(HOOKACC, hook_accid + 12);
+                    uint8_t account[20];
+                    if (otxn_param(SBUF(account), "ACC", 3) != 20)
+                        NOPE("Master: Misconfigured. Missing ACC asset parameter.");
 
-            // create a trustline ...
-            uint8_t xfl_buffer[8];
-            if (otxn_param(xfl_buffer, 8, "AMT", 3) != 8)
-                NOPE("Master: Misconfigured. Missing AMT otxn parameter.");
+                    uint8_t amt[48];
+                    if (otxn_param(SBUF(amt), "AMT", 3) != 48)
+                        NOPE("Master: Misconfigured. Missing AMT asset parameter.");
 
-            int64_t xfl_out = *((int64_t *)xfl_buffer);
+                    uint8_t hash[32];
+                    if (otxn_param(SBUF(hash), "AHS", 3) != 32)
+                        NOPE("Master: Misconfigured. Missing AHS asset parameter.");
 
-            // write limit amount
-            float_sto(OUTAMT_TL, 49, OUTCUR, 20, OUTISS, 20, xfl_out, sfLimitAmount);
+                    // check if the trustline exists
+                    uint8_t keylet[34];
+                    util_keylet(keylet, 34, KEYLET_LINE, hook_accid + 12, 20, amt + 28, 20, amt + 8, 20);
+                    int64_t already_setup = (slot_set(SBUF(keylet), 10) == 10);
+                    TRACEVAR(already_setup);
+                    if (already_setup)
+                        DONE("Master: Already setup trustline.");
+
+                    int64_t xfl_out = *((int64_t *)amt);
+
+                    // write limit amount
+                    float_sto(OUTAMT_TL, 49, amt + 8, 20, amt + 28, 20, xfl_out, sfLimitAmount);
+                            
+                    // set the template transaction type to trustset
+                    *TTOUT = 0x14U;
+
+                    etxn_details(EMITDET_TL, 138);
+                    int64_t fee = etxn_fee_base(txn_out, TXNLEN_TL);
+                    BE_DROPS(fee);
+                    *((uint64_t*)(FEEOUT)) = fee;
+
+                    txn_out[15] = (seq >> 24U) & 0xFFU;
+                    txn_out[16] = (seq >> 16U) & 0xFFU;
+                    txn_out[17] = (seq >>  8U) & 0xFFU;
+                    txn_out[18] = seq & 0xFFU;
+
+                    seq += 4;
+                    txn_out[21] = (seq >> 24U) & 0xFFU;
+                    txn_out[22] = (seq >> 16U) & 0xFFU;
+                    txn_out[23] = (seq >>  8U) & 0xFFU;
+                    txn_out[24] = seq & 0xFFU;
+            
+                    trace(SBUF("emit:"), txn_out, TXNLEN_TL, 1);
+
+                    uint8_t emithash[32];
+                    int64_t emit_result = emit(SBUF(emithash), txn_out, TXNLEN_TL);
+                    TRACEVAR(emit_result);
                     
-            // set the template transaction type to trustset
-            *TTOUT = 0x14U;
+                    TRACEHEX(hash);
+                    state_set(account, 20, SBUF(hash));
+                    DONE("Master: Created Asset Integration.");
+                }
 
-            etxn_details(EMITDET_TL, 138);
-            int64_t fee = etxn_fee_base(txn_out, TXNLEN_TL);
-            BE_DROPS(fee);
-            *((uint64_t*)(FEEOUT)) = fee;
+                case 'U': // create asset (integration)
+                {
+                    uint8_t account[20];
+                    if (otxn_param(SBUF(account), "ACC", 3) != 20)
+                        NOPE("Master: Misconfigured. Missing ACC modify parameter.");
+                    
+                    uint8_t hash[32];
+                    if (otxn_param(SBUF(hash), "AHS", 3) != 32)
+                        NOPE("Master: Misconfigured. Missing AHS asset parameter.");
 
-            txn_out[15] = (seq >> 24U) & 0xFFU;
-            txn_out[16] = (seq >> 16U) & 0xFFU;
-            txn_out[17] = (seq >>  8U) & 0xFFU;
-            txn_out[18] = seq & 0xFFU;
+                    state_set(account, 20, SBUF(hash));
+                    DONE("Master: Updated Asset Integration.");
+                }
 
-            seq += 4;
-            txn_out[21] = (seq >> 24U) & 0xFFU;
-            txn_out[22] = (seq >> 16U) & 0xFFU;
-            txn_out[23] = (seq >>  8U) & 0xFFU;
-            txn_out[24] = seq & 0xFFU;
-    
-            trace(SBUF("emit:"), txn_out, TXNLEN_TL, 1);
+                case 'D': // delete asset (integration)
+                {
+                    
+                    DONE("Master: Deleted Asset Integration.");
+                }
 
-            uint8_t emithash[32];
-            int64_t emit_result = emit(SBUF(emithash), txn_out, TXNLEN_TL);
-            TRACEVAR(emit_result);
-
-            state_set(_admin, 20, "ADM", 3);
-            state_set(_stl, 20, "STL", 3);
-            state_set(_wkey, 33, "WKEY", 4);
-            state_set(OUTCUR, 20, "CUR", 3);
-            state_set(OUTISS, 20, "ISS", 3);
-            state_set(_acc, 20, "ACC", 3);
-            state_set(SVAR(_delay), "DLY", 3);
-            DONE("Master: Emitted TrustSet to initialize.");
+                default:
+                {
+                    NOPE("Master: Unknown operation.");
+                }
+            }
         }
 
         case 'U':
@@ -329,7 +351,21 @@ int64_t hook(uint32_t r)
         // settlement
         case 'S':
         {
+
+            uint8_t amt[48];
+            if (otxn_param(SBUF(amt), "AMT", 3) != 48)
+                NOPE("Master: Misconfigured. Missing AMT otxn parameter.");
+            int64_t sig_amt = *((int64_t *)amt);
+            
+            uint8_t hash[32];
+            if (otxn_param(SBUF(hash), "AHS", 3) != 48)
+                NOPE("Master: Misconfigured. Missing AHS otxn parameter.");
+
             ACCOUNT_TO_BUF(HOOKACC, hook_accid + 12);
+
+            // check if the trustline exists
+            uint8_t keylet[34];
+            util_keylet(keylet, 34, KEYLET_LINE, hook_accid + 12, 20, amt + 28, 20, amt + 8, 20);
             
             // check trustline balance
             slot_subfield(10, sfBalance, 11);
@@ -342,11 +378,9 @@ int64_t hook(uint32_t r)
                 NOPE("Master: Insane balance on trustline.");
 
             // set the destination addr to the settlement addr
-            COPY_20(acc, DESTACC);
-
-            int64_t sig_amt;
-            if (otxn_param(SVAR(sig_amt), "AMT", 3) != 8 || sig_amt < 0)
-                NOPE("Master: Misconfigured. Missing AMT otxn parameter.");
+            uint8_t stl_account[20];
+            state_set(SBUF(stl_account), SBUF(hash));
+            COPY_20(stl_account, DESTACC);
 
             uint32_t sig_nce;
             if (otxn_param(SVAR(sig_nce), "SEQ", 3) != 4)
@@ -368,7 +402,7 @@ int64_t hook(uint32_t r)
                 NOPE("Master: Balance not high enough for this settlement.");
 
             // write payment amount
-            float_sto(OUTAMT, 49, OUTCUR, 20, OUTISS, 20, sig_amt, sfAmount);
+            float_sto(OUTAMT, 49, amt + 8, 20, amt + 28, 20, sig_amt, sfAmount);
 
             etxn_details(EMITDET, 138);
             int64_t fee = etxn_fee_base(txn_out, TXNLEN);
@@ -406,16 +440,23 @@ int64_t hook(uint32_t r)
         // refund
         case 'R':
         {
-            if (otxn_param(SVAR(dtag), "TAG", 3) != 4)
-                NOPE("Master: Misconfigured. Missing TAG otxn parameter.");
 
-            int64_t sig_amt;
-            if (otxn_param(SVAR(sig_amt), "AMT", 3) != 8 || sig_amt < 0)
+            ACCOUNT_TO_BUF(HOOKACC, hook_accid + 12);
+
+            uint8_t amt[48];
+            if (otxn_param(SBUF(amt), "AMT", 3) != 48)
                 NOPE("Master: Misconfigured. Missing AMT otxn parameter.");
+            int64_t sig_amt = *((int64_t *)amt);
 
             uint32_t sig_nce;
             if (otxn_param(SVAR(sig_nce), "SEQ", 3) != 4)
                 NOPE("Master: Misconfigured. Missing SEQ otxn parameter.");
+            
+            uint8_t acct_buff[20];
+            if (otxn_param(SVAR(acct_buff), "ACC", 3) != 20)
+                NOPE("Master: Misconfigured. Missing ACC otxn parameter.");
+
+            COPY_20(acct_buff, DESTACC);
 
             // check the nonce
             uint32_t rfd_seq;
@@ -425,27 +466,54 @@ int64_t hook(uint32_t r)
             if (rfd_seq != sig_nce)
                 NOPE("Master: Refund nonce out of sequence.");
 
-            uint8_t dtag_bal[8];
-            state(SBUF(dtag_bal), dtag + 28, 4);
-            int64_t dtag_bal_xfl = *((int64_t*)dtag_bal);
+            // check if the trustline exists
+            uint8_t keylet[34];
+            util_keylet(keylet, 34, KEYLET_LINE, hook_accid + 12, 20, amt + 8, 20, amt + 28, 20);
+            
+            // check trustline balance
+            slot_subfield(10, sfBalance, 11);
+            if (slot_size(11) != 48)
+                NOPE("Master: Could not fetch trustline balance.");
+    
+            int64_t xfl_bal = slot_float(11);
 
             // check dtag balance
-            if (dtag_bal_xfl <= 0 || !float_compare(dtag_bal_xfl, 0, COMPARE_GREATER))
-                NOPE("Master: Insane balance on dtag.");
+            if (xfl_bal <= 0 || !float_compare(xfl_bal, 0, COMPARE_GREATER))
+                NOPE("Master: Insane balance on balance.");
 
             if (sig_amt <= 0)
                 NOPE("Master: Must provide AMT param when performing refund.");
 
-            if (float_compare(sig_amt, dtag_bal_xfl, COMPARE_GREATER))
+            if (float_compare(sig_amt, xfl_bal, COMPARE_GREATER))
                 NOPE("Master: Balance not high enough for this debit.");
 
-            int64_t add_dtag_bal_xfl = float_sum(dtag_bal_xfl, sig_amt);
-            if (state_set(SVAR(add_dtag_bal_xfl), SVAR(dtag)) != 8)
-                NOPE("Master: Insane balance on dtag.");
+            // write payment amount
+            float_sto(OUTAMT, 49, amt + 8, 20, amt + 28, 20, sig_amt, sfAmount);
 
-            int64_t sub_stl_bal_xfl = float_sum(dtag_bal_xfl, float_negate(sig_amt));
-            if (state_set(SVAR(sub_stl_bal_xfl), hook_accid + 12, 20) != 8)
-                NOPE("Master: Insane balance on stl.");
+            etxn_details(EMITDET, 138);
+            int64_t fee = etxn_fee_base(txn_out, TXNLEN);
+            BE_DROPS(fee);
+            *((uint64_t*)(FEEOUT)) = fee;
+
+            txn_out[15] = (seq >> 24U) & 0xFFU;
+            txn_out[16] = (seq >> 16U) & 0xFFU;
+            txn_out[17] = (seq >>  8U) & 0xFFU;
+            txn_out[18] = seq & 0xFFU;
+
+            seq += 4;
+            txn_out[21] = (seq >> 24U) & 0xFFU;
+            txn_out[22] = (seq >> 16U) & 0xFFU;
+            txn_out[23] = (seq >>  8U) & 0xFFU;
+            txn_out[24] = seq & 0xFFU;
+    
+            trace(SBUF("emit:"), txn_out, TXNLEN, 1);
+
+            uint8_t emithash[32];
+            int64_t emit_result = emit(SBUF(emithash), txn_out, TXNLEN);
+            if (emit_result < 0)
+            {
+                NOPE("Master: Refund Emitted Failure.");
+            }
 
             rfd_seq++;
             if (state_set(SVAR(rfd_seq), otxn_accid + 12, 20) != 4)
@@ -497,16 +565,6 @@ int64_t hook(uint32_t r)
                     
                     state_set(SVAR(delay), "DLY", 3);
                     DONE("Master: DLY Modified.");
-                }
-
-                case 'I': // settlement (address)
-                {
-                    uint8_t account[20];
-                    if (otxn_param(SBUF(account), "ACC", 3) != 20)
-                        NOPE("Master: Misconfigured. Missing ACC modify parameter.");
-
-                    state_set(account, 20, "ACC", 3);
-                    DONE("Master: ACC Modified.");
                 }
 
                 default:

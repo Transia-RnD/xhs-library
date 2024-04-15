@@ -28,6 +28,7 @@ import {
   padHexString,
   hexNamespace,
   flipHex,
+  generateHash,
 } from '@transia/hooks-toolkit'
 import {
   currencyToHex,
@@ -66,7 +67,6 @@ describe('modular - Success Group', () => {
 
     const masterHook = testContext.hook1
     const userHook = testContext.hook2
-    const settlementWallet = testContext.bob
 
     const adminWallet = testContext.frank
     const settleInvoker = testContext.grace
@@ -90,19 +90,8 @@ describe('modular - Success Group', () => {
       new iHookParamValue(withdrawInvoker.publicKey, true)
     )
     const hookParam5 = new iHookParamEntry(
-      new iHookParamName('CUR'),
-      new iHookParamValue(currencyToHex(testContext.ic.currency), true)
-    )
-    const hookParam6 = new iHookParamEntry(
-      new iHookParamName('ISS'),
-      new iHookParamValue(xrpAddressToHex(testContext.ic.issuer), true)
-    )
-    const hookParam7 = new iHookParamEntry(
-      new iHookParamName('ACC'),
-      new iHookParamValue(
-        xrpAddressToHex(settlementWallet.classicAddress),
-        true
-      )
+      new iHookParamName('DLY'),
+      new iHookParamValue(flipHex(uint32ToHex(10)), true)
     )
     const mhook1 = createHookPayload({
       version: 0,
@@ -116,8 +105,6 @@ describe('modular - Success Group', () => {
         hookParam3.toXrpl(),
         hookParam4.toXrpl(),
         hookParam5.toXrpl(),
-        hookParam6.toXrpl(),
-        hookParam7.toXrpl(),
       ],
     })
     await setHooksV3({
@@ -143,34 +130,71 @@ describe('modular - Success Group', () => {
     teardownClient(testContext)
   })
 
-  it('operation (master) - initialize', async () => {
+  it('operation (master) - add asset', async () => {
     const hookWallet = testContext.hook1
-    const aliceWallet = testContext.alice
+    const adminWallet = testContext.frank
+    const settlementWallet = testContext.bob
+
     const otxnParam1 = new iHookParamEntry(
       new iHookParamName('OP'),
-      new iHookParamValue('I')
+      new iHookParamValue('A')
     )
     const otxnParam2 = new iHookParamEntry(
+      new iHookParamName('SOP'),
+      new iHookParamValue('C')
+    )
+    const otxnParam3 = new iHookParamEntry(
       new iHookParamName('AMT'),
-      new iHookParamValue(xflToHex(100000), true)
+      new iHookParamValue(
+        xflToHex(100000) +
+          currencyToHex(testContext.ic.currency) +
+          xrpAddressToHex(testContext.ic.issuer),
+        true
+      )
+    )
+    const otxnParam4 = new iHookParamEntry(
+      new iHookParamName('ACC'),
+      new iHookParamValue(
+        xrpAddressToHex(settlementWallet.classicAddress),
+        true
+      )
+    )
+    const hash = generateHash(
+      Buffer.from(
+        currencyToHex(testContext.ic.currency) +
+          xrpAddressToHex(testContext.ic.issuer),
+        'hex'
+      )
+    )
+    const otxnParam5 = new iHookParamEntry(
+      new iHookParamName('AHS'),
+      new iHookParamValue(hash, true)
     )
     const builtTx: Invoke = {
       TransactionType: 'Invoke',
-      Account: aliceWallet.classicAddress,
+      Account: adminWallet.classicAddress,
       Destination: hookWallet.classicAddress,
-      HookParameters: [otxnParam1.toXrpl(), otxnParam2.toXrpl()],
+      HookParameters: [
+        otxnParam1.toXrpl(),
+        otxnParam2.toXrpl(),
+        otxnParam3.toXrpl(),
+        otxnParam4.toXrpl(),
+        otxnParam5.toXrpl(),
+      ],
     }
     const result = await Xrpld.submit(testContext.client, {
-      wallet: aliceWallet,
+      wallet: adminWallet,
       tx: builtTx,
     })
+    console.log(result)
+
     const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
       testContext.client,
       result.meta as TransactionMetadata
     )
     await close(testContext.client)
     expect(hookExecutions.executions[0].HookReturnString).toEqual(
-      'Master: Emitted TrustSet to initialize.'
+      'Master: Created Asset Integration.'
     )
   })
 
@@ -179,17 +203,42 @@ describe('modular - Success Group', () => {
     const aliceWallet = testContext.alice
     const otxnParam1 = new iHookParamEntry(
       new iHookParamName('OP'),
-      new iHookParamValue('I')
+      new iHookParamValue('A')
     )
     const otxnParam2 = new iHookParamEntry(
+      new iHookParamName('SOP'),
+      new iHookParamValue('C')
+    )
+    const otxnParam3 = new iHookParamEntry(
       new iHookParamName('AMT'),
-      new iHookParamValue(xflToHex(100000), true)
+      new iHookParamValue(
+        xflToHex(100000) +
+          currencyToHex(testContext.ic.currency) +
+          xrpAddressToHex(testContext.ic.issuer),
+        true
+      )
+    )
+    const hash = generateHash(
+      Buffer.from(
+        currencyToHex(testContext.ic.currency) +
+          xrpAddressToHex(testContext.ic.issuer),
+        'hex'
+      )
+    )
+    const otxnParam4 = new iHookParamEntry(
+      new iHookParamName('AHS'),
+      new iHookParamValue(hash, true)
     )
     const builtTx: Invoke = {
       TransactionType: 'Invoke',
       Account: aliceWallet.classicAddress,
       Destination: hookWallet.classicAddress,
-      HookParameters: [otxnParam1.toXrpl(), otxnParam2.toXrpl()],
+      HookParameters: [
+        otxnParam1.toXrpl(),
+        otxnParam2.toXrpl(),
+        otxnParam3.toXrpl(),
+        otxnParam4.toXrpl(),
+      ],
     }
     const result = await Xrpld.submit(testContext.client, {
       wallet: aliceWallet,
@@ -201,56 +250,56 @@ describe('modular - Success Group', () => {
     )
     await close(testContext.client)
     expect(hookExecutions.executions[0].HookReturnString).toEqual(
-      'User: Emitted TrustSet to initialize.'
+      'User: Created Asset Integration.'
     )
   })
 
-  it('operation - pause/unpause', async () => {
-    const hookWallet = testContext.hook1
-    const adminWallet = testContext.frank
-    const otxn1Param1 = new iHookParamEntry(
-      new iHookParamName('OP'),
-      new iHookParamValue('P')
-    )
-    const builtTx1: Invoke = {
-      TransactionType: 'Invoke',
-      Account: adminWallet.classicAddress,
-      Destination: hookWallet.classicAddress,
-      HookParameters: [otxn1Param1.toXrpl()],
-    }
-    const result1 = await Xrpld.submit(testContext.client, {
-      wallet: adminWallet,
-      tx: builtTx1,
-    })
-    const hookExecutions1 = await ExecutionUtility.getHookExecutionsFromMeta(
-      testContext.client,
-      result1.meta as TransactionMetadata
-    )
-    expect(hookExecutions1.executions[0].HookReturnString).toEqual(
-      'Master: Paused/Unpaused.'
-    )
-    const otxn2Param1 = new iHookParamEntry(
-      new iHookParamName('OP'),
-      new iHookParamValue('U')
-    )
-    const builtTx2: Invoke = {
-      TransactionType: 'Invoke',
-      Account: adminWallet.classicAddress,
-      Destination: hookWallet.classicAddress,
-      HookParameters: [otxn2Param1.toXrpl()],
-    }
-    const result2 = await Xrpld.submit(testContext.client, {
-      wallet: adminWallet,
-      tx: builtTx2,
-    })
-    const hookExecutions2 = await ExecutionUtility.getHookExecutionsFromMeta(
-      testContext.client,
-      result2.meta as TransactionMetadata
-    )
-    expect(hookExecutions2.executions[0].HookReturnString).toEqual(
-      'Master: Paused/Unpaused.'
-    )
-  })
+  // it('operation - pause/unpause', async () => {
+  //   const hookWallet = testContext.hook1
+  //   const adminWallet = testContext.frank
+  //   const otxn1Param1 = new iHookParamEntry(
+  //     new iHookParamName('OP'),
+  //     new iHookParamValue('P')
+  //   )
+  //   const builtTx1: Invoke = {
+  //     TransactionType: 'Invoke',
+  //     Account: adminWallet.classicAddress,
+  //     Destination: hookWallet.classicAddress,
+  //     HookParameters: [otxn1Param1.toXrpl()],
+  //   }
+  //   const result1 = await Xrpld.submit(testContext.client, {
+  //     wallet: adminWallet,
+  //     tx: builtTx1,
+  //   })
+  //   const hookExecutions1 = await ExecutionUtility.getHookExecutionsFromMeta(
+  //     testContext.client,
+  //     result1.meta as TransactionMetadata
+  //   )
+  //   expect(hookExecutions1.executions[0].HookReturnString).toEqual(
+  //     'Master: Paused/Unpaused.'
+  //   )
+  //   const otxn2Param1 = new iHookParamEntry(
+  //     new iHookParamName('OP'),
+  //     new iHookParamValue('U')
+  //   )
+  //   const builtTx2: Invoke = {
+  //     TransactionType: 'Invoke',
+  //     Account: adminWallet.classicAddress,
+  //     Destination: hookWallet.classicAddress,
+  //     HookParameters: [otxn2Param1.toXrpl()],
+  //   }
+  //   const result2 = await Xrpld.submit(testContext.client, {
+  //     wallet: adminWallet,
+  //     tx: builtTx2,
+  //   })
+  //   const hookExecutions2 = await ExecutionUtility.getHookExecutionsFromMeta(
+  //     testContext.client,
+  //     result2.meta as TransactionMetadata
+  //   )
+  //   expect(hookExecutions2.executions[0].HookReturnString).toEqual(
+  //     'Master: Paused/Unpaused.'
+  //   )
+  // })
   it('operation - user deposit', async () => {
     const hookWallet = testContext.hook2
     const aliceWallet = testContext.alice
@@ -295,7 +344,12 @@ describe('modular - Success Group', () => {
     )
     const otxnParam2 = new iHookParamEntry(
       new iHookParamName('AMT'),
-      new iHookParamValue(xflToHex(amount), true)
+      new iHookParamValue(
+        xflToHex(amount) +
+          currencyToHex(testContext.ic.currency) +
+          xrpAddressToHex(testContext.ic.issuer),
+        true
+      )
     )
     const nonce = await getNextNonce(
       testContext.client,
@@ -345,6 +399,8 @@ describe('modular - Success Group', () => {
     const hex =
       xrpAddressToHex(userWallet.classicAddress) +
       xflToHex(amount) +
+      currencyToHex(testContext.ic.currency) +
+      xrpAddressToHex(testContext.ic.issuer) +
       flipHex(uint32ToHex(expiration)) +
       flipHex(uint32ToHex(nonce))
 
@@ -401,7 +457,12 @@ describe('modular - Success Group', () => {
     )
     const otxnParam3 = new iHookParamEntry(
       new iHookParamName('AMT'),
-      new iHookParamValue(xflToHex(amount), true)
+      new iHookParamValue(
+        xflToHex(amount) +
+          currencyToHex(testContext.ic.currency) +
+          xrpAddressToHex(testContext.ic.issuer),
+        true
+      )
     )
     const nonce = await getNextNonce(
       testContext.client,

@@ -8,19 +8,28 @@ STL: The settler account (role)
 RFD: The refunder account (role)
 WKEY: The withdrawer pubkey (role)
 
-CUR: The currency allowed in the funding source
-ISS: The issuer account allowed in the funding source
-ACC: The settlement account (globally per asset)
+Asset States
+KEY: <hash>(<20 bytes currency><20 bytes issuer>)
+DATA: <settlement address(<20 byte address>)
 
 Operations:
 
 // payment ops are: 
     // D - deposit (any)
 
-// invoke ops are: (role)
-    // I - initalize (any)
+// invoke ops are:
     // B - debit (settler)
     // W - withdraw (user)
+
+// invoke (Asset) ops are:
+    // C - create asset (integration) - Set TrustLine ~
+    // D - delete asset (integration) - Set Trustline 0
+
+// invoke (Withdraw) ops are:
+    // A - Approval (user)
+    // I - Intent (user)
+    // E - Execution (user)
+    // C - Cancel (user)
 
 */
 //==============================================================================
@@ -194,23 +203,10 @@ int64_t hook(uint32_t r)
     if (state_foreign(SBUF(wkey), "WKEY", 4, SBUF(ns), SBUF(master_accid)) != 33)
         NOPE("User: Misconfigured. Missing WKEY state.");
 
-    // get currency
-    if (state_foreign(OUTCUR, 20, "CUR", 3, SBUF(ns), SBUF(master_accid)) != 20)
-        NOPE("User: Misconfigured. Missing CUR state.");
-
-    // get currency issuer
-    if (state_foreign(OUTISS, 20, "ISS", 3, SBUF(ns), SBUF(master_accid)) != 20)
-        NOPE("User: Misconfigured. Missing ISS state.");
-    
-    // get settlement account (asset settlement account)
-    uint8_t acc[20];
-    if (state_foreign(SBUF(acc), "ACC", 3, SBUF(ns), SBUF(master_accid)) != 20)
-        NOPE("User: Misconfigured. Missing ACC state.");
-    
     // get withdraw delay
-    int64_t delay;
-    if (state_foreign(SVAR(delay), "DLY", 3, SBUF(ns), SBUF(master_accid)) != 20)
-        NOPE("User: Misconfigured. Missing DLY state.");
+    // int64_t delay;
+    // if (state_foreign(SVAR(delay), "DLY", 3, SBUF(ns), SBUF(master_accid)) != 4)
+    //     NOPE("User: Misconfigured. Missing DLY state.");
 
     // Operation
     uint8_t op;
@@ -219,7 +215,7 @@ int64_t hook(uint32_t r)
 
     // Sub Operation
     uint8_t sop;
-    if (op == 'W' && otxn_param(&sop, 1, "SOP", 3) != 1)
+    if ((op == 'W' || op == 'A') && otxn_param(&sop, 1, "SOP", 3) != 1)
         NOPE("User: Missing SOP parameter on Invoke.");
 
     int64_t xfl_in;
@@ -236,12 +232,6 @@ int64_t hook(uint32_t r)
 
         otxn_field(SBUF(amt), sfAmount);
 
-        if (!BUFFER_EQUAL_20(amt + 8, OUTCUR))
-            NOPE("User: Wrong currency.");
-
-        if (!BUFFER_EQUAL_20(amt + 28, OUTISS))
-            NOPE("User: Wrong issuer.");
-
         xfl_in = slot_float(2);
 
         if (xfl_in < 0 || !float_compare(xfl_in, 0, COMPARE_GREATER))
@@ -253,16 +243,6 @@ int64_t hook(uint32_t r)
     state_foreign(&paused, 1, "P", 1, SBUF(ns), SBUF(master_accid));
     if (paused)
         NOPE("User: Paused.");
-
-    // check if the trustline exists
-    uint8_t keylet[34];
-    util_keylet(keylet, 34, KEYLET_LINE, hook_accid + 12, 20, OUTISS, 20, OUTCUR, 20);
-
-    int64_t already_setup = (slot_set(SBUF(keylet), 10) == 10);
-
-    // enforce initalisation
-    if (!already_setup && op != 'I')
-        NOPE("User: Send op=I initalisation first.");
 
     int64_t is_stl = BUFFER_EQUAL_20(otxn_accid + 12, stl);
 
@@ -280,48 +260,81 @@ int64_t hook(uint32_t r)
     // action
     switch (op)
     {
-        case 'I':
+        case 'A':
         {
-            if (already_setup)
-                DONE("User: Already setup trustline.");
+            switch (sop)
+            {
+                case 'C': // create asset (integration)
+                {
+                    ACCOUNT_TO_BUF(HOOKACC, hook_accid + 12);
 
-            ACCOUNT_TO_BUF(HOOKACC, hook_accid + 12);
+                    uint8_t amt[48];
+                    if (otxn_param(SBUF(amt), "AMT", 3) != 48)
+                        NOPE("User: Misconfigured. Missing AMT asset parameter.");
 
-            // create a trustline ...
-            uint8_t xfl_buffer[8];
-            if (otxn_param(xfl_buffer, 8, "AMT", 3) != 8)
-                NOPE("User: Misconfigured. Missing AMT otxn parameter.");
+                    uint8_t hash[32];
+                    if (otxn_param(SBUF(hash), "AHS", 3) != 32)
+                        NOPE("User: Misconfigured. Missing AHS asset parameter.");
 
-            int64_t xfl_out = *((int64_t *)xfl_buffer);
+                    uint8_t dump[20];
+                    TRACEHEX(hash);
+                    if (state_foreign(SBUF(dump), SBUF(hash), SBUF(ns), SBUF(master_accid)) == DOESNT_EXIST)
+                    {
+                        NOPE("User: Asset has not been integrated with Master Contract.");
+                    }
 
-            // write limit amount
-            float_sto(OUTAMT_TL, 49, OUTCUR, 20, OUTISS, 20, xfl_out, sfLimitAmount);
+                    // check if the trustline exists
+                    uint8_t keylet[34];
+                    util_keylet(keylet, 34, KEYLET_LINE, hook_accid + 12, 20, amt + 28, 20, amt + 8, 20);
+                    int64_t already_setup = (slot_set(SBUF(keylet), 10) == 10);
+                    TRACEVAR(already_setup);
+                    if (already_setup)
+                        DONE("User: Already setup trustline.");
+
+                    int64_t xfl_out = *((int64_t *)amt);
+
+                    // write limit amount
+                    float_sto(OUTAMT_TL, 49, amt + 8, 20, amt + 28, 20, xfl_out, sfLimitAmount);
+                            
+                    // set the template transaction type to trustset
+                    *TTOUT = 0x14U;
+
+                    etxn_details(EMITDET_TL, 138);
+                    int64_t fee = etxn_fee_base(txn_out, TXNLEN_TL);
+                    BE_DROPS(fee);
+                    *((uint64_t*)(FEEOUT)) = fee;
+
+                    txn_out[15] = (seq >> 24U) & 0xFFU;
+                    txn_out[16] = (seq >> 16U) & 0xFFU;
+                    txn_out[17] = (seq >>  8U) & 0xFFU;
+                    txn_out[18] = seq & 0xFFU;
+
+                    seq += 4;
+                    txn_out[21] = (seq >> 24U) & 0xFFU;
+                    txn_out[22] = (seq >> 16U) & 0xFFU;
+                    txn_out[23] = (seq >>  8U) & 0xFFU;
+                    txn_out[24] = seq & 0xFFU;
+            
+                    trace(SBUF("emit:"), txn_out, TXNLEN_TL, 1);
+
+                    uint8_t emithash[32];
+                    int64_t emit_result = emit(SBUF(emithash), txn_out, TXNLEN_TL);
+                    TRACEVAR(emit_result);
+
+                    DONE("User: Created Asset Integration.");
+                }
+
+                case 'D': // delete asset (integration)
+                {
                     
-            // set the template transaction type to trustset
-            *TTOUT = 0x14U;
+                    DONE("User: Deleted Asset Integration.");
+                }
 
-            etxn_details(EMITDET_TL, 138);
-            int64_t fee = etxn_fee_base(txn_out, TXNLEN_TL);
-            BE_DROPS(fee);
-            *((uint64_t*)(FEEOUT)) = fee;
-
-            txn_out[15] = (seq >> 24U) & 0xFFU;
-            txn_out[16] = (seq >> 16U) & 0xFFU;
-            txn_out[17] = (seq >>  8U) & 0xFFU;
-            txn_out[18] = seq & 0xFFU;
-
-            seq += 4;
-            txn_out[21] = (seq >> 24U) & 0xFFU;
-            txn_out[22] = (seq >> 16U) & 0xFFU;
-            txn_out[23] = (seq >>  8U) & 0xFFU;
-            txn_out[24] = seq & 0xFFU;
-    
-            trace(SBUF("emit:"), txn_out, TXNLEN_TL, 1);
-
-            uint8_t emithash[32];
-            int64_t emit_result = emit(SBUF(emithash), txn_out, TXNLEN_TL);
-            TRACEVAR(emit_result);
-            DONE("User: Emitted TrustSet to initialize.");
+                default:
+                {
+                    NOPE("User: Unknown operation.");
+                }
+            }
         }
 
         case 'D':
@@ -332,9 +345,10 @@ int64_t hook(uint32_t r)
         // debit
         case 'B':
         {
-            int64_t sig_amt;
-            if (otxn_param(SVAR(sig_amt), "AMT", 3) != 8 || sig_amt < 0)
+            uint8_t amt[48];
+            if (otxn_param(SBUF(amt), "AMT", 3) != 48)
                 NOPE("User: Misconfigured. Missing AMT otxn parameter.");
+            int64_t sig_amt = *((int64_t *)amt);
 
             uint32_t sig_nce;
             if (otxn_param(SVAR(sig_nce), "SEQ", 3) != 4)
@@ -346,6 +360,12 @@ int64_t hook(uint32_t r)
 
             if (dbt_seq != sig_nce)
                 NOPE("User: Debit nonce out of sequence.");
+
+            // check if the trustline exists
+            uint8_t keylet[34];
+            util_keylet(keylet, 34, KEYLET_LINE, hook_accid + 12, 20, amt + 28, 20, amt + 8, 20);
+            if (slot_set(SBUF(keylet), 10) != 10)
+                DONE("User: Invalid trustline.");
 
             // check trustline balance
             slot_subfield(10, sfBalance, 11);
@@ -364,18 +384,14 @@ int64_t hook(uint32_t r)
             // set the destination addr to the settlement addr
             COPY_20(stl, DESTACC); 
 
-            // if they are settling then they need an amt param
-            uint64_t xfl_stl;
-            otxn_param(&xfl_stl, 8, "AMT", 3);
-
-            if (xfl_stl <= 0)
+            if (sig_amt <= 0)
                 NOPE("Funds: Must provide AMT param when performing settlement.");
 
-            if (float_compare(xfl_stl, xfl_bal, COMPARE_GREATER))
+            if (float_compare(sig_amt, xfl_bal, COMPARE_GREATER))
                 NOPE("Funds: Balance not high enough for this settlement.");
 
             // write payment amount
-            float_sto(OUTAMT, 49, OUTCUR, 20, OUTISS, 20, xfl_stl, sfAmount);
+            float_sto(OUTAMT, 49, amt + 8, 20, amt + 28, 20, sig_amt, sfAmount);
 
             etxn_details(EMITDET, 138);
             int64_t fee = etxn_fee_base(txn_out, TXNLEN);
@@ -426,16 +442,20 @@ int64_t hook(uint32_t r)
                     // place pointers according to packed data
                     uint8_t* sig_acc = sig_buf;
                     uint64_t sig_amt = *((uint64_t*)(sig_buf + 20));
-                    uint32_t sig_exp = *((uint32_t*)(sig_buf + 28));
-                    uint32_t sig_nce = *((uint32_t*)(sig_buf + 32));
-                    uint8_t* sig = sig_buf + 36;
+                    COPY_20(sig_buf + 28, OUTCUR);
+                    COPY_20(sig_buf + 48, OUTISS);
+                    // uint64_t sig_cur = *((uint64_t*)(sig_buf + 28));
+                    // uint64_t sig_iss = *((uint64_t*)(sig_buf + 48));
+                    uint32_t sig_exp = *((uint32_t*)(sig_buf + 68));
+                    uint32_t sig_nce = *((uint32_t*)(sig_buf + 72));
+                    uint8_t* sig = sig_buf + 76;
 
                     if (sig_len > 0)
                     {
-                        if (sig_len < 80)
+                        if (sig_len < 120)
                             NOPE("User: Signature too short.");
 
-                        if (!util_verify(sig_buf, 36, sig_buf + 36, sig_len - 36, SBUF(wkey)))
+                        if (!util_verify(sig_buf, 76, sig_buf + 76, sig_len - 76, SBUF(wkey)))
                             NOPE("User: Signature verification failed.");
                     }
 
@@ -448,6 +468,12 @@ int64_t hook(uint32_t r)
 
                     if (!BUFFER_EQUAL_20(sig_acc, otxn_accid + 12))
                         NOPE("User: Wrong account for ticket.");
+
+                    // check if the trustline exists
+                    uint8_t keylet[34];
+                    util_keylet(keylet, 34, KEYLET_LINE, hook_accid + 12, 20, OUTISS, 20, OUTCUR, 20);
+                    if (slot_set(SBUF(keylet), 10) != 10)
+                        DONE("User: Invalid trustline.");
                     
                     // check trustline balance
                     slot_subfield(10, sfBalance, 11);
@@ -514,14 +540,21 @@ int64_t hook(uint32_t r)
 
                 case 'I': // permissionless (intent)
                 {
-                    int64_t sig_amt;
-                    if (otxn_param(SVAR(sig_amt), "AMT", 3) != 8 || sig_amt < 0)
+                    uint8_t amt[56];
+                    if (otxn_param(amt, 48, "AMT", 3) != 48)
                         NOPE("User: Misconfigured. Missing AMT otxn parameter.");
+                    int64_t sig_amt = *((int64_t *)amt);
 
                     uint32_t sig_nce;
                     if (otxn_param(SVAR(sig_nce), "SEQ", 3) != 4)
                         NOPE("User: Misconfigured. Missing SEQ otxn parameter.");
                     
+                    // check if the trustline exists
+                    uint8_t keylet[34];
+                    util_keylet(keylet, 34, KEYLET_LINE, hook_accid + 12, 20, amt + 28, 20, amt + 8, 20);
+                    if (slot_set(SBUF(keylet), 10) != 10)
+                        DONE("User: Invalid trustline.");
+
                     // check trustline balance
                     slot_subfield(10, sfBalance, 11);
                     if (slot_size(11) != 48)
@@ -544,18 +577,15 @@ int64_t hook(uint32_t r)
                     if (float_compare(sig_amt, xfl_bal, COMPARE_GREATER))
                         NOPE("User: Balance not high enough for this withdrawal.");
                     
-                    int64_t time = ledger_last_time() + delay;
+                    int64_t time = ledger_last_time() + 1;
                     uint8_t pending_buff[24];
                     COPY_20(otxn_accid + 12, pending_buff);
                     UINT32_TO_BUF(pending_buff + 20U, sig_nce);
 
                     TRACEHEX(pending_buff);
 
-                    uint8_t amount_buff[16];
-                    INT64_TO_BUF(amount_buff, FLIP_ENDIAN_64(sig_amt));
-                    INT64_TO_BUF(amount_buff + 8U, time);
-                    
-                    if (state_set(SBUF(amount_buff), SBUF(pending_buff)) != 16)
+                    INT64_TO_BUF(amt + 48U, time);
+                    if (state_set(SBUF(amt), SBUF(pending_buff)) != 56)
                         NOPE("User: Could not save pending withdrawal intent.");
 
                     // update nonce
@@ -574,11 +604,11 @@ int64_t hook(uint32_t r)
 
                     TRACEHEX(pending_buff);
 
-                    uint8_t amount_buff[16];
+                    uint8_t amount_buff[56];
                     if (state(SBUF(amount_buff), SBUF(pending_buff)) == DOESNT_EXIST)
                         NOPE("User: Misconfigured. Withdraw Intent does not exist.");
                     
-                    int64_t delay_time = UINT64_FROM_BUF(amount_buff + 8);
+                    int64_t delay_time = UINT64_FROM_BUF(amount_buff + 48);
                     int64_t time = ledger_last_time();
                     if (time < delay_time)
                         NOPE("User: Need to wait..");
@@ -591,7 +621,7 @@ int64_t hook(uint32_t r)
                     COPY_20(pending_buff, DESTACC);
 
                     // write payment amount
-                    float_sto(OUTAMT, 49, OUTCUR, 20, OUTISS, 20, sig_amt, sfAmount);
+                    float_sto(OUTAMT, 49, amount_buff + 8, 20, amount_buff + 28, 20, sig_amt, sfAmount);
 
                     etxn_details(EMITDET, 138);
                     int64_t fee = etxn_fee_base(txn_out, TXNLEN);
