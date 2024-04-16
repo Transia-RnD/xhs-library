@@ -392,6 +392,7 @@ int64_t hook(uint32_t r)
         // settlement
         case 'S':
         {
+            ACCOUNT_TO_BUF(HOOKACC, hook_accid + 12);
 
             uint8_t amt[48];
             if (otxn_param(SBUF(amt), "AMT", 3) != 48)
@@ -399,21 +400,40 @@ int64_t hook(uint32_t r)
             int64_t sig_amt = *((int64_t *)amt);
             
             uint8_t hash[32];
-            if (otxn_param(SBUF(hash), "AHS", 3) != 48)
+            if (otxn_param(SBUF(hash), "AHS", 3) != 32)
                 NOPE("Master: Misconfigured. Missing AHS otxn parameter.");
 
-            ACCOUNT_TO_BUF(HOOKACC, hook_accid + 12);
+            uint32_t sig_nce;
+            if (otxn_param(SVAR(sig_nce), "SEQ", 3) != 4)
+                NOPE("Master: Misconfigured. Missing SEQ otxn parameter.");
 
             // check if the trustline exists
             uint8_t keylet[34];
             util_keylet(keylet, 34, KEYLET_LINE, hook_accid + 12, 20, amt + 28, 20, amt + 8, 20);
+            if (slot_set(SBUF(keylet), 10) != 10)
+                DONE("Master: Invalid trustline.");
             
             // check trustline balance
             slot_subfield(10, sfBalance, 11);
             if (slot_size(11) != 48)
                 NOPE("Master: Could not fetch trustline balance.");
     
+            uint8_t low_limit[48];
+            if (slot_subfield(10, sfLowLimit, 13) != 13)
+                NOPE("Master: Could not slot subfield `sfLowLimit`");
+
+            if (slot(SVAR(low_limit), 13) != 48)
+                NOPE("Master: Could not slot `sfLowLimit`");
+
             int64_t xfl_bal = slot_float(11);
+
+            // balance is negative and issuer is not low
+            if (float_sign(xfl_bal) && !BUFFER_EQUAL_20(amt + 28, low_limit + 28))
+            {
+                NOPE("Master: Insane balance on trustline.");
+            }
+
+            xfl_bal = float_sign(xfl_bal) ? float_negate(xfl_bal) : xfl_bal;
 
             if (xfl_bal <= 0 || !float_compare(xfl_bal, 0, COMPARE_GREATER))
                 NOPE("Master: Insane balance on trustline.");
@@ -422,10 +442,6 @@ int64_t hook(uint32_t r)
             uint8_t stl_account[20];
             state_set(SBUF(stl_account), SBUF(hash));
             COPY_20(stl_account, DESTACC);
-
-            uint32_t sig_nce;
-            if (otxn_param(SVAR(sig_nce), "SEQ", 3) != 4)
-                NOPE("Master: Misconfigured. Missing SEQ otxn parameter.");
 
             // check the nonce
             uint32_t stl_seq;
@@ -509,14 +525,31 @@ int64_t hook(uint32_t r)
 
             // check if the trustline exists
             uint8_t keylet[34];
-            util_keylet(keylet, 34, KEYLET_LINE, hook_accid + 12, 20, amt + 8, 20, amt + 28, 20);
-            
+            util_keylet(keylet, 34, KEYLET_LINE, hook_accid + 12, 20, amt + 28, 20, amt + 8, 20);
+            if (slot_set(SBUF(keylet), 10) != 10)
+                DONE("User: Invalid trustline.");
+
             // check trustline balance
             slot_subfield(10, sfBalance, 11);
             if (slot_size(11) != 48)
                 NOPE("Master: Could not fetch trustline balance.");
     
+            uint8_t low_limit[48];
+            if (slot_subfield(10, sfLowLimit, 13) != 13)
+                NOPE("Master: Could not slot subfield `sfLowLimit`");
+
+            if (slot(SVAR(low_limit), 13) != 48)
+                NOPE("Master: Could not slot `sfLowLimit`");
+
             int64_t xfl_bal = slot_float(11);
+
+            // balance is negative and issuer is not low
+            if (float_sign(xfl_bal) && !BUFFER_EQUAL_20(amt + 28, low_limit + 28))
+            {
+                NOPE("Master: Insane balance on trustline.");
+            }
+
+            xfl_bal = float_sign(xfl_bal) ? float_negate(xfl_bal) : xfl_bal;
 
             // check dtag balance
             if (xfl_bal <= 0 || !float_compare(xfl_bal, 0, COMPARE_GREATER))

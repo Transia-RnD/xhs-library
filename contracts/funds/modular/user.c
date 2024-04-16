@@ -409,12 +409,27 @@ int64_t hook(uint32_t r)
             // check trustline balance
             slot_subfield(10, sfBalance, 11);
             if (slot_size(11) != 48)
-                NOPE("Funds: Could not fetch trustline balance.");
+                NOPE("User: Could not fetch trustline balance.");
     
+            uint8_t low_limit[48];
+            if (slot_subfield(10, sfLowLimit, 13) != 13)
+                NOPE("User: Could not slot subfield `sfLowLimit`");
+
+            if (slot(SVAR(low_limit), 13) != 48)
+                NOPE("User: Could not slot `sfLowLimit`");
+
             int64_t xfl_bal = slot_float(11);
 
+            // balance is negative and issuer is not low
+            if (float_sign(xfl_bal) && !BUFFER_EQUAL_20(amt + 28, low_limit + 28))
+            {
+                NOPE("User: Insane balance on trustline.");
+            }
+
+            xfl_bal = float_sign(xfl_bal) ? float_negate(xfl_bal) : xfl_bal;
+
             if (xfl_bal <= 0 || !float_compare(xfl_bal, 0, COMPARE_GREATER))
-                NOPE("Funds: Insane balance on trustline.");
+                NOPE("User: Insane balance on trustline.");
 
             int64_t xfl_out;
 
@@ -424,10 +439,10 @@ int64_t hook(uint32_t r)
             COPY_20(stl, DESTACC); 
 
             if (sig_amt <= 0)
-                NOPE("Funds: Must provide AMT param when performing settlement.");
+                NOPE("User: Must provide AMT param when performing settlement.");
 
             if (float_compare(sig_amt, xfl_bal, COMPARE_GREATER))
-                NOPE("Funds: Balance not high enough for this settlement.");
+                NOPE("User: Balance not high enough for this settlement.");
 
             // write payment amount
             float_sto(OUTAMT, 49, amt + 8, 20, amt + 28, 20, sig_amt, sfAmount);
@@ -454,7 +469,7 @@ int64_t hook(uint32_t r)
             int64_t emit_result = emit(SBUF(emithash), txn_out, TXNLEN);
             if (emit_result < 0)
             {
-                NOPE("Funds: Debit Emitted Failure.");
+                NOPE("User: Debit Emitted Failure.");
             }
 
             dbt_seq++;
@@ -517,12 +532,27 @@ int64_t hook(uint32_t r)
                     // check trustline balance
                     slot_subfield(10, sfBalance, 11);
                     if (slot_size(11) != 48)
-                        NOPE("Funds: Could not fetch trustline balance.");
+                        NOPE("User: Could not fetch trustline balance.");
             
+                    uint8_t low_limit[48];
+                    if (slot_subfield(10, sfLowLimit, 13) != 13)
+                        NOPE("User: Could not slot subfield `sfLowLimit`");
+
+                    if (slot(SVAR(low_limit), 13) != 48)
+                        NOPE("User: Could not slot `sfLowLimit`");
+
                     int64_t xfl_bal = slot_float(11);
 
+                    // balance is negative and issuer is not low
+                    if (float_sign(xfl_bal) && !BUFFER_EQUAL_20(OUTISS, low_limit + 28))
+                    {
+                        NOPE("User: Insane balance on trustline.");
+                    }
+
+                    xfl_bal = float_sign(xfl_bal) ? float_negate(xfl_bal) : xfl_bal;
+
                     if (xfl_bal <= 0 || !float_compare(xfl_bal, 0, COMPARE_GREATER))
-                        NOPE("Funds: Insane balance on trustline.");
+                        NOPE("User: Insane balance on trustline.");
 
                     // check the nonce
                     uint32_t wth_seq;
@@ -597,12 +627,27 @@ int64_t hook(uint32_t r)
                     // check trustline balance
                     slot_subfield(10, sfBalance, 11);
                     if (slot_size(11) != 48)
-                        NOPE("Funds: Could not fetch trustline balance.");
+                        NOPE("User: Could not fetch trustline balance.");
             
+                    uint8_t low_limit[48];
+                    if (slot_subfield(10, sfLowLimit, 13) != 13)
+                        NOPE("User: Could not slot subfield `sfLowLimit`");
+
+                    if (slot(SVAR(low_limit), 13) != 48)
+                        NOPE("User: Could not slot `sfLowLimit`");
+
                     int64_t xfl_bal = slot_float(11);
 
+                    // balance is negative and issuer is not low
+                    if (float_sign(xfl_bal) && !BUFFER_EQUAL_20(OUTISS, low_limit + 28))
+                    {
+                        NOPE("User: Insane balance on trustline.");
+                    }
+
+                    xfl_bal = float_sign(xfl_bal) ? float_negate(xfl_bal) : xfl_bal;
+
                     if (xfl_bal <= 0 || !float_compare(xfl_bal, 0, COMPARE_GREATER))
-                        NOPE("Funds: Insane balance on trustline.");
+                        NOPE("User: Insane balance on trustline.");
 
                     // check the nonce
                     uint32_t wth_seq;
