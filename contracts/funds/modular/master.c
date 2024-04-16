@@ -189,7 +189,7 @@ int64_t hook(uint32_t r)
     
     // Sub Operation
     uint8_t sop;
-    if (op == 'M' || op == 'A' && otxn_param(&sop, 1, "SOP", 3) != 1)
+    if ((op == 'M' || op == 'A') && otxn_param(&sop, 1, "SOP", 3) != 1)
         NOPE("Master: Missing SOP parameter on Invoke.");
 
     int64_t xfl_in;
@@ -328,7 +328,48 @@ int64_t hook(uint32_t r)
 
                 case 'D': // delete asset (integration)
                 {
+                    ACCOUNT_TO_BUF(HOOKACC, hook_accid + 12);
                     
+                    uint8_t amt[48];
+                    if (otxn_param(SBUF(amt), "AMT", 3) != 48)
+                        NOPE("Master: Misconfigured. Missing AMT asset parameter.");
+
+                    uint8_t hash[32];
+                    if (otxn_param(SBUF(hash), "AHS", 3) != 32)
+                        NOPE("Master: Misconfigured. Missing AHS asset parameter.");
+
+                    int64_t xfl_out = *((int64_t *)amt);
+
+                    // write limit amount
+                    float_sto(OUTAMT_TL, 49, amt + 8, 20, amt + 28, 20, xfl_out, sfLimitAmount);
+                            
+                    // set the template transaction type to trustset
+                    *TTOUT = 0x14U;
+
+                    etxn_details(EMITDET_TL, 138);
+                    int64_t fee = etxn_fee_base(txn_out, TXNLEN_TL);
+                    BE_DROPS(fee);
+                    *((uint64_t*)(FEEOUT)) = fee;
+
+                    txn_out[15] = (seq >> 24U) & 0xFFU;
+                    txn_out[16] = (seq >> 16U) & 0xFFU;
+                    txn_out[17] = (seq >>  8U) & 0xFFU;
+                    txn_out[18] = seq & 0xFFU;
+
+                    seq += 4;
+                    txn_out[21] = (seq >> 24U) & 0xFFU;
+                    txn_out[22] = (seq >> 16U) & 0xFFU;
+                    txn_out[23] = (seq >>  8U) & 0xFFU;
+                    txn_out[24] = seq & 0xFFU;
+            
+                    trace(SBUF("emit:"), txn_out, TXNLEN_TL, 1);
+
+                    uint8_t emithash[32];
+                    int64_t emit_result = emit(SBUF(emithash), txn_out, TXNLEN_TL);
+                    TRACEVAR(emit_result);
+                    
+                    TRACEHEX(hash);
+                    state_set(0, 0, SBUF(hash));
                     DONE("Master: Deleted Asset Integration.");
                 }
 
@@ -525,7 +566,7 @@ int64_t hook(uint32_t r)
 
         case 'M':
         {
-            switch (op)
+            switch (sop)
             {
                 case 'A': // admin (role)
                 {
@@ -534,7 +575,7 @@ int64_t hook(uint32_t r)
                         NOPE("Master: Misconfigured. Missing ACC modify parameter.");
 
                     state_set(account, 20, "ADM", 3);
-                    DONE("Master: ADM Modified.");
+                    DONE("Master: Admin Modified.");
                 }
 
                 case 'S': // settler (role)
@@ -544,27 +585,27 @@ int64_t hook(uint32_t r)
                         NOPE("Master: Misconfigured. Missing ACC modify parameter.");
 
                     state_set(account, 20, "STL", 3);
-                    DONE("Master: STL Modified.");
+                    DONE("Master: Settlement Verifier Modified.");
                 }
 
                 case 'W': // withdraw (role)
                 {
                     uint8_t key[33];
-                    if (otxn_param(SBUF(key), "WKEY", 4) != 33)
+                    if (otxn_param(SBUF(key), "KEY", 3) != 33)
                         NOPE("Master: Misconfigured. Missing KEY modify parameter.");
                     
                     state_set(key, 33, "WKEY", 4);
-                    DONE("Master: WKEY Modified.");
+                    DONE("Master: Withdraw Verifier Modified.");
                 }
                 
                 case 'D': // delay (time)
                 {
                     int64_t delay;
-                    if (otxn_param(SVAR(delay), "DLY", 3) != 8)
+                    if (otxn_param(SVAR(delay), "DLY", 3) != 4)
                         NOPE("Master: Misconfigured. Missing DLY modify parameter.");
                     
                     state_set(SVAR(delay), "DLY", 3);
-                    DONE("Master: DLY Modified.");
+                    DONE("Master: Withdraw Delay Modified.");
                 }
 
                 default:

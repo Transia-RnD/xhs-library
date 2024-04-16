@@ -70,7 +70,6 @@ describe('modular - Success Group', () => {
 
     const adminWallet = testContext.frank
     const settleInvoker = testContext.grace
-    const refundInvoker = testContext.heidi
     const withdrawInvoker = testContext.ivan
 
     const hookParam1 = new iHookParamEntry(
@@ -82,14 +81,10 @@ describe('modular - Success Group', () => {
       new iHookParamValue(xrpAddressToHex(settleInvoker.classicAddress), true)
     )
     const hookParam3 = new iHookParamEntry(
-      new iHookParamName('RFD'),
-      new iHookParamValue(xrpAddressToHex(refundInvoker.classicAddress), true)
-    )
-    const hookParam4 = new iHookParamEntry(
       new iHookParamName('WKEY'),
       new iHookParamValue(withdrawInvoker.publicKey, true)
     )
-    const hookParam5 = new iHookParamEntry(
+    const hookParam4 = new iHookParamEntry(
       new iHookParamName('DLY'),
       new iHookParamValue(flipHex(uint32ToHex(10)), true)
     )
@@ -104,7 +99,6 @@ describe('modular - Success Group', () => {
         hookParam2.toXrpl(),
         hookParam3.toXrpl(),
         hookParam4.toXrpl(),
-        hookParam5.toXrpl(),
       ],
     })
     await setHooksV3({
@@ -197,8 +191,7 @@ describe('modular - Success Group', () => {
       'Master: Created Asset Integration.'
     )
   })
-
-  it('operation (user) - initialize', async () => {
+  it('operation (user) - add currency', async () => {
     const hookWallet = testContext.hook2
     const aliceWallet = testContext.alice
     const otxnParam1 = new iHookParamEntry(
@@ -543,6 +536,280 @@ describe('modular - Success Group', () => {
     await close(testContext.client)
     expect(hookExecutions.executions[0].HookReturnString).toEqual(
       'User: Emitted permissionless withdrawal.'
+    )
+  })
+  it('operation - modify (admin)', async () => {
+    const hookWallet = testContext.hook1
+    const adminWallet = testContext.frank
+    const admin1Wallet = testContext.elsa
+
+    const otxnParam1 = new iHookParamEntry(
+      new iHookParamName('OP'),
+      new iHookParamValue('M')
+    )
+    const otxnParam2 = new iHookParamEntry(
+      new iHookParamName('SOP'),
+      new iHookParamValue('A')
+    )
+    const otxnParam3 = new iHookParamEntry(
+      new iHookParamName('ACC'),
+      new iHookParamValue(xrpAddressToHex(admin1Wallet.classicAddress), true)
+    )
+    const builtTx: Invoke = {
+      TransactionType: 'Invoke',
+      Account: adminWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      HookParameters: [
+        otxnParam1.toXrpl(),
+        otxnParam2.toXrpl(),
+        otxnParam3.toXrpl(),
+      ],
+    }
+    const result = await Xrpld.submit(testContext.client, {
+      wallet: adminWallet,
+      tx: builtTx,
+    })
+    const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
+      testContext.client,
+      result.meta as TransactionMetadata
+    )
+    await close(testContext.client)
+    expect(hookExecutions.executions[0].HookReturnString).toEqual(
+      'Master: Admin Modified.'
+    )
+  })
+  it('operation - modify (settler)', async () => {
+    const hookWallet = testContext.hook1
+    const adminWallet = testContext.elsa
+    const settleWallet = testContext.frank
+
+    const otxnParam1 = new iHookParamEntry(
+      new iHookParamName('OP'),
+      new iHookParamValue('M')
+    )
+    const otxnParam2 = new iHookParamEntry(
+      new iHookParamName('SOP'),
+      new iHookParamValue('S')
+    )
+    const otxnParam3 = new iHookParamEntry(
+      new iHookParamName('ACC'),
+      new iHookParamValue(xrpAddressToHex(settleWallet.classicAddress), true)
+    )
+    const builtTx: Invoke = {
+      TransactionType: 'Invoke',
+      Account: adminWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      HookParameters: [
+        otxnParam1.toXrpl(),
+        otxnParam2.toXrpl(),
+        otxnParam3.toXrpl(),
+      ],
+    }
+    const result = await Xrpld.submit(testContext.client, {
+      wallet: adminWallet,
+      tx: builtTx,
+    })
+    const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
+      testContext.client,
+      result.meta as TransactionMetadata
+    )
+    await close(testContext.client)
+    expect(hookExecutions.executions[0].HookReturnString).toEqual(
+      'Master: Settlement Verifier Modified.'
+    )
+  })
+  it('operation - modify (withdraw verifier)', async () => {
+    const hookWallet = testContext.hook1
+    const adminWallet = testContext.elsa
+    const withdrawInvoker = testContext.heidi
+
+    const otxnParam1 = new iHookParamEntry(
+      new iHookParamName('OP'),
+      new iHookParamValue('M')
+    )
+    const otxnParam2 = new iHookParamEntry(
+      new iHookParamName('SOP'),
+      new iHookParamValue('W')
+    )
+    const otxnParam3 = new iHookParamEntry(
+      new iHookParamName('KEY'),
+      new iHookParamValue(withdrawInvoker.publicKey, true)
+    )
+    const builtTx: Invoke = {
+      TransactionType: 'Invoke',
+      Account: adminWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      HookParameters: [
+        otxnParam1.toXrpl(),
+        otxnParam2.toXrpl(),
+        otxnParam3.toXrpl(),
+      ],
+    }
+    const result = await Xrpld.submit(testContext.client, {
+      wallet: adminWallet,
+      tx: builtTx,
+    })
+    const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
+      testContext.client,
+      result.meta as TransactionMetadata
+    )
+    await close(testContext.client)
+    expect(hookExecutions.executions[0].HookReturnString).toEqual(
+      'Master: Withdraw Verifier Modified.'
+    )
+  })
+  it('operation - modify (withdraw delay)', async () => {
+    const hookWallet = testContext.hook1
+    const adminWallet = testContext.elsa
+
+    const otxnParam1 = new iHookParamEntry(
+      new iHookParamName('OP'),
+      new iHookParamValue('M')
+    )
+    const otxnParam2 = new iHookParamEntry(
+      new iHookParamName('SOP'),
+      new iHookParamValue('D')
+    )
+    const otxnParam3 = new iHookParamEntry(
+      new iHookParamName('DLY'),
+      new iHookParamValue(flipHex(uint32ToHex(10)), true)
+    )
+    const builtTx: Invoke = {
+      TransactionType: 'Invoke',
+      Account: adminWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      HookParameters: [
+        otxnParam1.toXrpl(),
+        otxnParam2.toXrpl(),
+        otxnParam3.toXrpl(),
+      ],
+    }
+    const result = await Xrpld.submit(testContext.client, {
+      wallet: adminWallet,
+      tx: builtTx,
+    })
+    const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
+      testContext.client,
+      result.meta as TransactionMetadata
+    )
+    await close(testContext.client)
+    expect(hookExecutions.executions[0].HookReturnString).toEqual(
+      'Master: Withdraw Delay Modified.'
+    )
+  })
+  it('operation (master) - update asset', async () => {
+    const hookWallet = testContext.hook1
+    const adminWallet = testContext.frank
+    const settlementWallet = testContext.carol
+
+    const otxnParam1 = new iHookParamEntry(
+      new iHookParamName('OP'),
+      new iHookParamValue('A')
+    )
+    const otxnParam2 = new iHookParamEntry(
+      new iHookParamName('SOP'),
+      new iHookParamValue('U')
+    )
+    const otxnParam3 = new iHookParamEntry(
+      new iHookParamName('ACC'),
+      new iHookParamValue(
+        xrpAddressToHex(settlementWallet.classicAddress),
+        true
+      )
+    )
+    const hash = generateHash(
+      Buffer.from(
+        currencyToHex(testContext.ic.currency) +
+          xrpAddressToHex(testContext.ic.issuer),
+        'hex'
+      )
+    )
+    const otxnParam4 = new iHookParamEntry(
+      new iHookParamName('AHS'),
+      new iHookParamValue(hash, true)
+    )
+    const builtTx: Invoke = {
+      TransactionType: 'Invoke',
+      Account: adminWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      HookParameters: [
+        otxnParam1.toXrpl(),
+        otxnParam2.toXrpl(),
+        otxnParam3.toXrpl(),
+        otxnParam4.toXrpl(),
+      ],
+    }
+    const result = await Xrpld.submit(testContext.client, {
+      wallet: adminWallet,
+      tx: builtTx,
+    })
+    console.log(result)
+
+    const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
+      testContext.client,
+      result.meta as TransactionMetadata
+    )
+    await close(testContext.client)
+    expect(hookExecutions.executions[0].HookReturnString).toEqual(
+      'Master: Updated Asset Integration.'
+    )
+  })
+  it('operation (master) - delete asset', async () => {
+    const hookWallet = testContext.hook1
+    const adminWallet = testContext.frank
+
+    const otxnParam1 = new iHookParamEntry(
+      new iHookParamName('OP'),
+      new iHookParamValue('A')
+    )
+    const otxnParam2 = new iHookParamEntry(
+      new iHookParamName('SOP'),
+      new iHookParamValue('D')
+    )
+    const otxnParam3 = new iHookParamEntry(
+      new iHookParamName('AMT'),
+      new iHookParamValue(
+        xflToHex(0) +
+          currencyToHex(testContext.ic.currency) +
+          xrpAddressToHex(testContext.ic.issuer),
+        true
+      )
+    )
+    const hash = generateHash(
+      Buffer.from(
+        currencyToHex(testContext.ic.currency) +
+          xrpAddressToHex(testContext.ic.issuer),
+        'hex'
+      )
+    )
+    const otxnParam4 = new iHookParamEntry(
+      new iHookParamName('AHS'),
+      new iHookParamValue(hash, true)
+    )
+    const builtTx: Invoke = {
+      TransactionType: 'Invoke',
+      Account: adminWallet.classicAddress,
+      Destination: hookWallet.classicAddress,
+      HookParameters: [
+        otxnParam1.toXrpl(),
+        otxnParam2.toXrpl(),
+        otxnParam3.toXrpl(),
+        otxnParam4.toXrpl(),
+      ],
+    }
+    const result = await Xrpld.submit(testContext.client, {
+      wallet: adminWallet,
+      tx: builtTx,
+    })
+    console.log(result)
+
+    const hookExecutions = await ExecutionUtility.getHookExecutionsFromMeta(
+      testContext.client,
+      result.meta as TransactionMetadata
+    )
+    await close(testContext.client)
+    expect(hookExecutions.executions[0].HookReturnString).toEqual(
+      'Master: Deleted Asset Integration.'
     )
   })
 })
