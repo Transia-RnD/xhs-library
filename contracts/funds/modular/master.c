@@ -559,7 +559,7 @@ int64_t hook(uint32_t r)
                 NOPE("Master: Must provide AMT param when performing refund.");
 
             if (float_compare(sig_amt, xfl_bal, COMPARE_GREATER))
-                NOPE("Master: Balance not high enough for this debit.");
+                NOPE("Master: Balance not high enough for this refund.");
 
             // write payment amount
             float_sto(OUTAMT, 49, amt + 8, 20, amt + 28, 20, sig_amt, sfAmount);

@@ -302,16 +302,11 @@ describe('modular - Success Group', () => {
       currency: testContext.ic.currency,
       value: '100',
     }
-    const otxnParam1 = new iHookParamEntry(
-      new iHookParamName('OP'),
-      new iHookParamValue('D')
-    )
     const builtTx: Payment = {
       TransactionType: 'Payment',
       Account: aliceWallet.classicAddress,
       Destination: hookWallet.classicAddress,
       Amount: amount,
-      HookParameters: [otxnParam1.toXrpl()],
     }
     const result = await Xrpld.submit(testContext.client, {
       wallet: aliceWallet,

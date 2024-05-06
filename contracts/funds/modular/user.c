@@ -210,20 +210,24 @@ int64_t hook(uint32_t r)
 
     // Operation
     uint8_t op;
-    if (otxn_param(&op, 1, "OP", 2) != 1)
+    if (otxn_param(&op, 1, "OP", 2) != 1 && tt != ttPAYMENT)
         NOPE("User: Missing OP parameter on Invoke.");
 
     // Sub Operation
     uint8_t sop;
     if ((op == 'W' || op == 'A') && otxn_param(&sop, 1, "SOP", 3) != 1)
-        NOPE("User: Missing SOP parameter on Invoke.");
+        NOPE("User: Missing SOP parameter on Withdraw or Asset Operation.");
 
-    int64_t xfl_in;
-    uint32_t flags;
+    // enforced pausedness
+    uint8_t paused;
+    state_foreign(&paused, 1, "P", 1, SBUF(ns), SBUF(master_accid));
+    if (paused)
+        NOPE("User: Paused.");
 
     if (tt == ttPAYMENT)
     {
         // this will fail if flags isn't in the txn, that's also ok.
+        uint32_t flags;
         otxn_field(&flags, 4, sfFlags);
         
         // check for partial payments (0x00020000) -> (0x00000200 LE)
@@ -232,23 +236,13 @@ int64_t hook(uint32_t r)
 
         otxn_field(SBUF(amt), sfAmount);
 
-        xfl_in = slot_float(2);
+        int64_t xfl_in = slot_float(2);
 
         if (xfl_in < 0 || !float_compare(xfl_in, 0, COMPARE_GREATER))
             NOPE("User: Invalid sfAmount.");
     }
 
-    // enforced pausedness
-    uint8_t paused;
-    state_foreign(&paused, 1, "P", 1, SBUF(ns), SBUF(master_accid));
-    if (paused)
-        NOPE("User: Paused.");
-
     int64_t is_stl = BUFFER_EQUAL_20(otxn_accid + 12, stl);
-
-    // sanity check
-    if ((op == 'D') && tt != ttPAYMENT)
-        NOPE("User: Deposit operations must be a payment transaction.");
 
     // permission check
     if (!is_stl && (op == 'B'))
@@ -374,11 +368,6 @@ int64_t hook(uint32_t r)
                     NOPE("User: Unknown operation.");
                 }
             }
-        }
-
-        case 'D':
-        {
-            DONE("User: Deposited.");
         }
 
         // debit
