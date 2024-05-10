@@ -53,5 +53,6 @@
 #include "sfcodes.h"
 #include "macro.h"
 #include "date.h"
+#include "tts.h"
 
 #endif
