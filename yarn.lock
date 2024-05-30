@@ -676,20 +676,16 @@
   dependencies:
     "@sinonjs/commons" "^3.0.0"
 
-"@transia/hooks-toolkit@^1.0.13":
-  version "1.0.13"
-  resolved "https://registry.yarnpkg.com/@transia/hooks-toolkit/-/hooks-toolkit-1.0.13.tgz#8bec788298c2776fdf284aa0add07f12536c4366"
-  integrity sha512-694yaHSqR9Zq6ShTAqBwmSKIKnF00to6cJGssDL9Il8piCzSjbp6EUVsVtwJBmDVe7ki0/LNnWIJo53gnm4y7w==
+"@transia/hooks-toolkit@^2.0.0-alpha.1":
+  version "2.0.0-alpha.1"
+  resolved "https://registry.yarnpkg.com/@transia/hooks-toolkit/-/hooks-toolkit-2.0.0-alpha.1.tgz#f6d3687af5281cd8d278198a3f841b3896662572"
+  integrity sha512-6Z+RGdoTLkGhDQmQNM+xZ0lOpybHnTNarQliIXvkZSTO4Lgu/5XbBftRhEq3Ubo/B5dna95MC0A0DCUM/j3htA==
   dependencies:
-    "@transia/xpop-toolkit" "^1.0.4"
-    "@transia/xrpl" "^2.7.3-alpha.25"
-    "@types/create-hash" "^1.2.4"
-    "@types/elliptic" "^6.4.16"
+    "@transia/xahau-models" "^2.7.3-alpha.27"
+    "@transia/xrpl" "^2.7.3-alpha.27"
     c2wasm-cli "^1.0.6"
-    chai "^4.3.7"
-    create-hash "^1.2.0"
     crypto-js "^4.1.1"
-    elliptic "^6.5.4"
+    jshooks-api "^1.0.2"
     winston "^3.10.0"
 
 "@transia/ripple-address-codec@^4.2.8-alpha.0":
@@ -700,10 +696,10 @@
     base-x "^3.0.9"
     create-hash "^1.1.2"
 
-"@transia/ripple-binary-codec@^1.4.6-alpha.4":
-  version "1.4.6-alpha.4"
-  resolved "https://registry.yarnpkg.com/@transia/ripple-binary-codec/-/ripple-binary-codec-1.4.6-alpha.4.tgz#6ab8a7f427890df6ffd067c431dfcc702ae06cb7"
-  integrity sha512-aMQszXtkCQV1lfIek0doIVE6TqITxoXX78yHCRZ6/HWckW7kS5OTynQBCXpfZA84Y1qq9dW1FscZ2uNLdCBB/A==
+"@transia/ripple-binary-codec@^1.4.6-alpha.8":
+  version "1.4.6-alpha.8"
+  resolved "https://registry.yarnpkg.com/@transia/ripple-binary-codec/-/ripple-binary-codec-1.4.6-alpha.8.tgz#ff894afe314b6a95c15ecbdf8740bb6c65eefa01"
+  integrity sha512-gz7HCCzA8W3hxaMt4KLK+eN1LeNeXDNRobNuAwLcNtILc7hYnJpeBXvrIPVSmh6jeS+n7MFquRdKXc+Rx5aZZQ==
   dependencies:
     "@transia/ripple-address-codec" "^4.2.8-alpha.0"
     assert "^2.0.0"
@@ -712,10 +708,10 @@
     create-hash "^1.2.0"
     decimal.js "^10.2.0"
 
-"@transia/ripple-binary-codec@^1.4.6-alpha.8":
-  version "1.4.6-alpha.8"
-  resolved "https://registry.yarnpkg.com/@transia/ripple-binary-codec/-/ripple-binary-codec-1.4.6-alpha.8.tgz#ff894afe314b6a95c15ecbdf8740bb6c65eefa01"
-  integrity sha512-gz7HCCzA8W3hxaMt4KLK+eN1LeNeXDNRobNuAwLcNtILc7hYnJpeBXvrIPVSmh6jeS+n7MFquRdKXc+Rx5aZZQ==
+"@transia/ripple-binary-codec@^1.4.6-alpha.9":
+  version "1.4.6-alpha.9"
+  resolved "https://registry.yarnpkg.com/@transia/ripple-binary-codec/-/ripple-binary-codec-1.4.6-alpha.9.tgz#733ea07a3af51a6bb37fb7c1ad690245989685fd"
+  integrity sha512-nOkIBj0AGpBMLfeDelRPbnDgjGrGOB4aDpsIf0qN2g9Nqu8XJyoQHNn0pX3dEzrOsJ/PRkcGIz4PbuxkkZCuOA==
   dependencies:
     "@transia/ripple-address-codec" "^4.2.8-alpha.0"
     assert "^2.0.0"
@@ -735,40 +731,22 @@
     elliptic "^6.5.4"
     hash.js "^1.0.3"
 
-"@transia/xpop-toolkit@^1.0.4":
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/@transia/xpop-toolkit/-/xpop-toolkit-1.0.4.tgz#41b46eaf443d7c7a5e612950a3104b1e43f890ef"
-  integrity sha512-IzNFNoC2XYz/lBmkOpra3l5o6/cMF8Tdr05gBvglWj5zXlD5GOfaYb9kcc8+LyDkjT9hsr6Cyqj4I15+cOQXmw==
+"@transia/xahau-models@^2.7.3-alpha.27":
+  version "2.7.3-alpha.27"
+  resolved "https://registry.yarnpkg.com/@transia/xahau-models/-/xahau-models-2.7.3-alpha.27.tgz#701240c8795fc49e7f26199aa0c4dd516e16fa8b"
+  integrity sha512-ugqHxyCs0I7ztor+t3D7S094Vo4GbRSts7Cbzx26GjzPyJjxwFS0KBerJxauBhHHQELtjrQzmHLqhS1t0AwNTA==
   dependencies:
-    "@transia/xrpl" "^2.7.3-alpha.16"
-    "@types/base-64" "^1.0.0"
-    axios "^1.4.0"
-    chai "^4.3.7"
-    crypto-js "^4.1.1"
-    dotenv "^16.3.1"
+    "@types/node" "^20.4.2"
+    ts-node "^10.9.1"
+    typescript "^5.1.6"
 
-"@transia/xrpl@^2.7.3-alpha.16":
-  version "2.7.3-alpha.16"
-  resolved "https://registry.yarnpkg.com/@transia/xrpl/-/xrpl-2.7.3-alpha.16.tgz#88933ef15174510c66712c99a92c9e7480909313"
-  integrity sha512-djVkdoTnRgCoLsCJQH7tNhKywN5J5SrBsz7anDQcNGZZkrp9dFVxUPV2XxiaAR+5wd5OQaNyFjmagGmeu6ey7w==
+"@transia/xrpl@^2.7.3-alpha.27":
+  version "2.7.3-alpha.27"
+  resolved "https://registry.yarnpkg.com/@transia/xrpl/-/xrpl-2.7.3-alpha.27.tgz#0c82dd17ad589502f338a7aa1ab49e7929fba389"
+  integrity sha512-+IbC4meiKmTFgt16gX69Ifg23sf3Rs6FvP5nCYuxJ+QT8fFWRmXKVxZK8xL4v4YVTiIYn/vBSNFT48zUu5C3TA==
   dependencies:
     "@transia/ripple-address-codec" "^4.2.8-alpha.0"
-    "@transia/ripple-binary-codec" "^1.4.6-alpha.4"
-    "@transia/ripple-keypairs" "^1.1.8-alpha.0"
-    bignumber.js "^9.0.0"
-    bip32 "^2.0.6"
-    bip39 "^3.0.4"
-    https-proxy-agent "^5.0.0"
-    lodash "^4.17.4"
-    ws "^8.2.2"
-
-"@transia/xrpl@^2.7.3-alpha.25":
-  version "2.7.3-alpha.25"
-  resolved "https://registry.yarnpkg.com/@transia/xrpl/-/xrpl-2.7.3-alpha.25.tgz#ae4a5d7f0cc11cafac206d34ae877d0f30816a23"
-  integrity sha512-MJTU9YJ4F+KSAq3w0bYaX2yZQQ7dSzqdBvW0/Z40pVw/r1xbIHj4E1nGXR/qhWVGONwZx5QVunEKR/g1yAFgng==
-  dependencies:
-    "@transia/ripple-address-codec" "^4.2.8-alpha.0"
-    "@transia/ripple-binary-codec" "^1.4.6-alpha.8"
+    "@transia/ripple-binary-codec" "^1.4.6-alpha.9"
     "@transia/ripple-keypairs" "^1.1.8-alpha.0"
     bignumber.js "^9.0.0"
     bip32 "^2.0.6"
@@ -830,29 +808,10 @@
   dependencies:
     "@babel/types" "^7.20.7"
 
-"@types/base-64@^1.0.0":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@types/base-64/-/base-64-1.0.1.tgz#9b7c0f7c06e1ddceece866f24db45d7ac23f817d"
-  integrity sha512-syGYQWNlO2yyGJjyP9i3eZeHZN+QS3V11EnsVwCiYgOQXMmQNAIgVpFsZ146R+o3l9ltB+KEVKsPW8RCyq2EAw==
-
-"@types/bn.js@*":
-  version "5.1.5"
-  resolved "https://registry.yarnpkg.com/@types/bn.js/-/bn.js-5.1.5.tgz#2e0dacdcce2c0f16b905d20ff87aedbc6f7b4bf0"
-  integrity sha512-V46N0zwKRF5Q00AZ6hWtN0T8gGmDUaUzLWQvHFo5yThtVwK/VCenFY3wXVbOvNfajEpsTfQM4IN9k/d6gUVX3A==
-  dependencies:
-    "@types/node" "*"
-
 "@types/chai@^4.3.4":
   version "4.3.5"
   resolved "https://registry.yarnpkg.com/@types/chai/-/chai-4.3.5.tgz#ae69bcbb1bebb68c4ac0b11e9d8ed04526b3562b"
   integrity sha512-mEo1sAde+UCE6b2hxn332f1g1E8WfYRu6p5SvTKr2ZKC1f7gFJXk4h5PyGP9Dt6gCaG8y8XhwnXWC6Iy2cmBng==
-
-"@types/create-hash@^1.2.4":
-  version "1.2.5"
-  resolved "https://registry.yarnpkg.com/@types/create-hash/-/create-hash-1.2.5.tgz#b9ba64bdc5737d33fc2ad0b018bef8cfccd5df37"
-  integrity sha512-ozlSbItKbg+Uv8FfJC6/pq8bf/hD1fpQQQGXtWhzlFekfSwkGYITs9IF6/h8Qz9ecnUpeK2nsVFRoPsk5pkx+w==
-  dependencies:
-    "@types/node" "*"
 
 "@types/crypto-js@^4.1.1":
   version "4.1.1"
@@ -865,13 +824,6 @@
   integrity sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==
   dependencies:
     "@types/ms" "*"
-
-"@types/elliptic@^6.4.16":
-  version "6.4.17"
-  resolved "https://registry.yarnpkg.com/@types/elliptic/-/elliptic-6.4.17.tgz#6c9ff6ba137670c8bc3c65da2e23995b22ec3607"
-  integrity sha512-+NOzUIq9aenYuaIFS+8Gmv72r72zb12jttZsAsu4zEJ3QmQfGo958Kh0jQ+GJp5+uflE14KI4BcZqcsGCxTNFA==
-  dependencies:
-    "@types/bn.js" "*"
 
 "@types/graceful-fs@^4.1.3":
   version "4.1.6"
@@ -931,6 +883,13 @@
   version "10.12.18"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.12.18.tgz#1d3ca764718915584fcd9f6344621b7672665c67"
   integrity sha512-fh+pAqt4xRzPfqA6eh3Z2y6fyZavRIumvjhaCL753+TVkGKGhpPeyrJG2JftD0T9q4GF00KjefsQ+PQNDdWQaQ==
+
+"@types/node@^20.4.2":
+  version "20.12.13"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.12.13.tgz#90ed3b8a4e52dd3c5dc5a42dde5b85b74ad8ed88"
+  integrity sha512-gBGeanV41c1L171rR7wjbMiEpEI/l5XFQdLLfhr/REwpgDy/4U8y89+i8kRiLzDyZdOkXh+cRaTetUnCYutoXA==
+  dependencies:
+    undici-types "~5.26.4"
 
 "@types/semver@^7.3.12":
   version "7.5.0"
@@ -1166,7 +1125,7 @@ available-typed-arrays@^1.0.5:
   resolved "https://registry.yarnpkg.com/available-typed-arrays/-/available-typed-arrays-1.0.5.tgz#92f95616501069d07d10edb2fc37d3e1c65123b7"
   integrity sha512-DMD0KiN46eipeziST1LPP/STfDU0sufISXmjSgvVsoU2tqxctQeASejWcfNtxYKqETM1UxQ8sp2OrSBWpHY6sw==
 
-axios@^1.3.4, axios@^1.4.0:
+axios@^1.3.4:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/axios/-/axios-1.4.0.tgz#38a7bf1224cd308de271146038b551d725f0be1f"
   integrity sha512-S4XCWMEmzvo64T9GfvQDOXgYRDJ/wsSZc7Jvdgx5u1sd0JwsuPLqb3SYmusag+edF6ziyMensPVqLTSc1PiSEA==
@@ -1703,7 +1662,7 @@ doctrine@^3.0.0:
   dependencies:
     esutils "^2.0.2"
 
-dotenv@^16.1.4, dotenv@^16.3.1:
+dotenv@^16.1.4:
   version "16.3.1"
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.3.1.tgz#369034de7d7e5b120972693352a3bf112172cc3e"
   integrity sha512-IPzF4w4/Rd94bA9imS68tZBaYyBWSCE47V1RGuMrB94iyTOIEwRmVL2x/4An+6mETpLrKJ5hQkB8W4kFAadeIQ==
@@ -2870,6 +2829,11 @@ jsesc@^2.5.1:
   resolved "https://registry.yarnpkg.com/jsesc/-/jsesc-2.5.2.tgz#80564d2e483dacf6e8ef209650a67df3f0c283a4"
   integrity sha512-OYu7XEzjkCQ3C5Ps3QIZsQfNpqoJyZZA99wd9aWd05NCtC5pWOkShK2mkL6HXQR6/Cy2lbNdPlZBpuQHXE63gA==
 
+jshooks-api@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/jshooks-api/-/jshooks-api-1.0.2.tgz#6673f1a9dc5cdc35e9236ba7437e079caa0246a6"
+  integrity sha512-gEJQtjxKd85o+ldYucdARChBByv32Ihx0/Lh9jSzdjKDz2TCIcNXIqIAc0livravExORoHoPu+E6ELhm9XZluA==
+
 json-parse-even-better-errors@^2.3.0:
   version "2.3.1"
   resolved "https://registry.yarnpkg.com/json-parse-even-better-errors/-/json-parse-even-better-errors-2.3.1.tgz#7c47805a94319928e05777405dc12e1f7a4ee02d"
@@ -3717,6 +3681,16 @@ typescript@^4.9.5:
   version "4.9.5"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.9.5.tgz#095979f9bcc0d09da324d58d03ce8f8374cbe65a"
   integrity sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==
+
+typescript@^5.1.6:
+  version "5.4.5"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.4.5.tgz#42ccef2c571fdbd0f6718b1d1f5e6e5ef006f611"
+  integrity sha512-vcI4UpRgg81oIRUFwR0WSIHKt11nJ7SAVlYNIu+QpqeyXP+gpQJy/Z4+F0aGxSE4MqwjyXvW/TzgkLAx2AGHwQ==
+
+undici-types@~5.26.4:
+  version "5.26.5"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-5.26.5.tgz#bcd539893d00b56e964fd2657a4866b221a65617"
+  integrity sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==
 
 update-browserslist-db@^1.0.11:
   version "1.0.11"
