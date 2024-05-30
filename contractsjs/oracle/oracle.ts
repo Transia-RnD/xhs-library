@@ -20,13 +20,13 @@ const Hook = (arg: number) => {
   }
 
   const txnId = otxn_id(0) as number[]
-  ASSERT(txnId.length === 32, 25)
+  ASSERT(txnId.length === 32, 23)
 
-  ASSERT(otxn_slot(1) === 1, 27)
-  ASSERT(slot_subfield(1, sfBlob, 2) === 2, 28)
+  ASSERT(otxn_slot(1) === 1, 25)
+  ASSERT(slot_subfield(1, sfBlob, 2) === 2, 26)
 
   const buffer = slot(2) as number[]
-  ASSERT(buffer.length > 0, 31)
+  ASSERT(buffer.length > 0, 39)
 
   let len = buffer[0]
   let ptr = 1
@@ -43,7 +43,7 @@ const Hook = (arg: number) => {
     ptr += 48
   }
 
-  return accept('oracle.c: Updated.', 0)
+  return accept('oracle.c: Updated.', 46)
 }
 
 // REQUIRED FOR ESBUILD
