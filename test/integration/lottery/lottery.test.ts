@@ -35,7 +35,7 @@ import {
   iHook,
   padHexString,
   flipHex,
-} from '@transia/hooks-toolkit'
+} from '@transia/hooks-toolkit/dist/npm/src'
 import {
   // decodeModel,
   // hexToUInt64,
@@ -108,7 +108,7 @@ export async function createLottery(
     HookParameters: [otxn1param1.toXrpl(), otxn1param2.toXrpl()],
   }
 
-  // console.log(JSON.stringify([otxn1param1.toXrpl(), otxn1param2.toXrpl()]))
+  console.log(JSON.stringify([otxn1param1.toXrpl(), otxn1param2.toXrpl()]))
   const result1 = await Xrpld.submit(client, {
     wallet: wallet,
     tx: builtTx1,
