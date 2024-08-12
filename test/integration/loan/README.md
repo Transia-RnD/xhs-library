@@ -1,61 +1,15 @@
+# Pool
+1. Create Pool
+- Deposit
+- Withdraw
+2. Update Pool
+3. Delete Pool
+# Loan
+1. Create Loan
+2. Update Loan
+3. Delete Loan
+4. End Loan
+4. Payment Loan
+5. Drawdown Loan
+5. Surity Loan (Collateral)
 
-
-# PoolCreate
-
-# PoolUpdate
-
-# PoolDelete
-
-# Deposit
-
-# Withdraw
-
-# CoverDeposit
-
-- Amount
-- PoolNonce
-- PoolDelegateID
-
-# CoverWithdraw
-
-- Amount
-- PoolNonce
-- PoolDelegateID
-
-# LoanCreate
-
-- Borrow
-- Lender
-- PoolID
-- FundAsset
-- Fees
-- Rates
-- Details
-
-PaymentInterval
-TotalPayments
-PrincipalRequested
-EndingPrincipal
-
-# LoanUpdate
-
-- LoanSequence
-- Borrow
-- State
-
-# LoanDelete
-
-- LoanSequence
-- Borrow
-
-# LoanClose
-
-- LoanSequence
-- Lender
-- Amount
-
-# DrawDown
-
-- LoanSequence
-- Lender
-- Amount

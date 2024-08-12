@@ -6,9 +6,11 @@ import {
   XRPAddress,
 } from '@transia/hooks-toolkit/dist/npm/src/libs/binary-models'
 import { AmountModel } from './utils/AmountModel'
+import { IssueModel } from './utils/IssueModel'
 
-export class LendingPool extends BaseModel {
+export class PoolModel extends BaseModel {
   isType: UInt8 //
+  issue: IssueModel //
   details: PoolDetails //
   withdraw: Withdraw //
   cover: PoolDelegateCover //
@@ -16,13 +18,15 @@ export class LendingPool extends BaseModel {
   // ?? bytes
   constructor(
     isType: UInt8, // 8 bytes / 0
-    details: PoolDetails, // ?? bytes / 8
+    issue: IssueModel, // 40 bytes / 1
+    // details: PoolDetails, // ?? bytes / 48
     withdraw: Withdraw, // ?? bytes / 8
     cover: PoolDelegateCover // ?? bytes / 8
   ) {
     super()
     this.isType = isType
-    this.details = details
+    this.issue = issue
+    // this.details = details
     this.withdraw = withdraw
     this.cover = cover
   }
@@ -30,7 +34,8 @@ export class LendingPool extends BaseModel {
   getMetadata(): Metadata {
     return [
       { field: 'isType', type: 'uint8' },
-      { field: 'details', type: 'model', modelClass: PoolDetails },
+      { field: 'issue', type: 'model', modelClass: IssueModel },
+      // { field: 'details', type: 'model', modelClass: PoolDetails },
       { field: 'withdraw', type: 'model', modelClass: Withdraw },
       { field: 'cover', type: 'model', modelClass: PoolDelegateCover },
     ]
@@ -39,7 +44,8 @@ export class LendingPool extends BaseModel {
   toJSON() {
     return {
       isType: this.isType,
-      details: this.details,
+      issue: this.issue,
+      // details: this.details,
       withdraw: this.withdraw,
       cover: this.cover,
     }
@@ -170,7 +176,7 @@ export class Permissions extends BaseModel {
   getMetadata(): Metadata {
     return [
       { field: 'lenders', type: 'model', modelClass: Permission },
-      { field: 'price', type: 'xfl' },
+      { field: 'borrowers', type: 'model', modelClass: Permission },
     ]
   }
 

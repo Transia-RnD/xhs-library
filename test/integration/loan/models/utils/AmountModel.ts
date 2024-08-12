@@ -7,35 +7,35 @@ import {
 } from '@transia/hooks-toolkit/dist/npm/src/libs/binary-models'
 
 export class AmountModel extends BaseModel {
+  value: XFL
   issuer: XRPAddress
   currency: Currency
-  value: XFL
 
   // 48 bytes
   constructor(
-    issuer: XRPAddress, // 20 byte / 0
+    value: XFL, // 8 byte / 0
     currency: Currency, // 20 byte / 20
-    value: XFL // 8 byte / 40
+    issuer: XRPAddress // 20 byte / 0
   ) {
     super()
-    this.issuer = issuer
-    this.currency = currency
     this.value = value
+    this.currency = currency
+    this.issuer = issuer
   }
 
   getMetadata(): Metadata {
     return [
-      { field: 'issuer', type: 'xrpAddress' },
-      { field: 'currency', type: 'currency' },
       { field: 'value', type: 'xfl' },
+      { field: 'currency', type: 'currency' },
+      { field: 'issuer', type: 'xrpAddress' },
     ]
   }
 
   toJSON() {
     return {
-      issuer: this.issuer,
-      currency: this.currency,
       value: this.value,
+      currency: this.currency,
+      issuer: this.issuer,
     }
   }
 }
