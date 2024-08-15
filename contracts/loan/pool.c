@@ -20,6 +20,10 @@ Operations:
 
 #define SVAR(x) &(x), sizeof(x)
 
+#define ASSERT(x)\
+    if (!(x))\
+        rollback(SBUF("pool.c: Assertion failed."),__LINE__);
+
 #define ACCOUNT_TO_BUF(buf_raw, i)\
 {\
     unsigned char* buf = (unsigned char*)buf_raw;\
@@ -106,6 +110,14 @@ uint8_t liquidity_ns[32] = {
     0xF4U, 0x50U, 0xFCU, 0x9FU, 0xC6U, 0x13U, 0x24U, 0x68U, 0x3AU, 0x3BU,
     0xEFU, 0xCDU, 0xD3U, 0x98U, 0xA0U, 0x1BU, 0xD4U, 0x99U, 0x5DU, 0x8BU,
     0xFBU, 0xB6U};
+
+// admin namespace: 35AB87618C9FC09E53A67F4CB194FC4B51D327EC5D21C6958B00A623D6F8EC1F
+uint8_t admin_ns[32] = {
+    0x35U, 0xABU, 0x87U, 0x61U, 0x8CU, 0x9FU, 0xC0U, 0x9EU, 0x53U, 0xA6U, 
+    0x7FU, 0x4CU, 0xB1U, 0x94U, 0xFCU, 0x4BU, 0x51U, 0xD3U, 0x27U, 0xECU, 
+    0x5DU, 0x21U, 0xC6U, 0x95U, 0x8BU, 0x00U, 0xA6U, 0x23U, 0xD6U, 0xF8U, 
+    0xECU, 0x1FU
+};
 
 // loan namespace: 470CC828CA6A4681034F21E22CECBEEC8BB450EB204559C82932B28F3DFB19BC
 uint8_t loan_ns[32] = {
@@ -240,6 +252,8 @@ int64_t hook(uint32_t r)
         }
         case 'L':
         {
+            uint8_t pool_mode = pool_model[0];
+            uint8_t manager_mode = pool_model[1];
             // action
             switch (sop)
             {
@@ -270,17 +284,26 @@ int64_t hook(uint32_t r)
                     if (emit_result > 0)
                     {
                         TRACEVAR(total_nav);
-                        if (total_nav <= 0)
+                        uint8_t dump[8];
+                        if (!manager_mode && state_foreign(SVAR(dump), otxn_accid + 12, 20, SBUF(admin_ns), hook_accid + 12, 20) == DOESNT_EXIST)
                         {
-                            // delete all entries
-                            state_foreign_set(0,0, hook_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
+                            // member count
+                            int64_t member_count = state_foreign(0, 0, "MC", 2, SBUF(admin_ns), hook_accid + 12, 20);
+                            
+                            // increment member count
+                            member_count++;
+
+                            // reverse key
+                            ASSERT(state_foreign_set(otxn_accid + 12, 20, SVAR(member_count), SBUF(admin_ns), hook_accid + 12, 20) == 20);
+
+                            // forward key
+                            ASSERT(state_foreign_set(SVAR(member_count), otxn_accid + 12, 20, SBUF(admin_ns), hook_accid + 12, 20) == 1);
+
+                            // update member count
+                            ASSERT(0 < state_foreign_set(SVAR(member_count), "MC", 2, SBUF(admin_ns), hook_accid + 12, 20));
                         }
-                        else
-                        {
-                            // Should be <8 bytes contribution> <8 bytes withdrawable>
-                            state_foreign_set(SVAR(_owner_nav), otxn_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
-                            state_foreign_set(SVAR(total_nav), hook_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
-                        }
+                        state_foreign_set(SVAR(_owner_nav), otxn_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
+                        state_foreign_set(SVAR(total_nav), hook_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
                         accept(SBUF("pool.c: Transaction Complete."), __LINE__);
                     }
                     NOPE("pool.c: Transaction Failed.");
@@ -333,17 +356,29 @@ int64_t hook(uint32_t r)
                     if (emit_result > 0)
                     {
                         TRACEVAR(total_nav);
-                        if (total_nav <= 0)
+                        uint8_t dump[8];
+                        if (!manager_mode && _owner_nav == 0)
                         {
-                            // delete all entries
-                            state_foreign_set(0,0, hook_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
+                            // member count
+                            int64_t member_count = state_foreign(0, 0, "MC", 2, SBUF(admin_ns), hook_accid + 12, 20);
+                            
+                            // decrement member count
+                            member_count--;
+
+                            // reverse key 
+                            uint8_t n = 0;
+                            // reverse key TODO: should remove exact seat number
+                            ASSERT(state_foreign_set(0, 0, &n, 1, SBUF(admin_ns), hook_accid + 12, 20) == 20);
+
+                            // forward key
+                            ASSERT(state_foreign_set(0, 0, otxn_accid + 12, 20, SBUF(admin_ns), hook_accid + 12, 20) == 1);
+
+                            // update member count
+                            ASSERT(0 < state_foreign_set(SVAR(member_count), "MC", 2, SBUF(admin_ns), hook_accid + 12, 20));
                         }
-                        else
-                        {
-                            // Should be <8 bytes contribution> <8 bytes withdrawable>
-                            state_foreign_set(SVAR(_owner_nav), otxn_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
-                            state_foreign_set(SVAR(total_nav), hook_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
-                        }
+
+                        state_foreign_set(SVAR(_owner_nav), otxn_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
+                        state_foreign_set(SVAR(total_nav), hook_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
                         accept(SBUF("pool.c: Transaction Complete (Withdraw Liquidity)."), __LINE__);
                     }
                     NOPE("pool.c: Transaction Failed (Withdraw Liquidity).");

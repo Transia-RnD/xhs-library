@@ -488,31 +488,43 @@ describe('loanPool', () => {
     await trust(testContext.client, USD.set(100000), ...[testContext.hook1])
 
     const hookWallet = testContext.hook1
-    const acct1hook1 = createHookPayload({
+    const hook1 = createHookPayload({
       version: 0,
       createFile: 'router_base',
       namespace: 'router',
       flags: SetHookFlags.hsfOverride,
       hookOnArray: ['Invoke', 'Payment'],
     })
-    const acct1hook2 = createHookPayload({
+    const hook2 = createHookPayload({
       version: 0,
       createFile: 'pool',
       namespace: 'pool',
       flags: SetHookFlags.hsfOverride,
       hookOnArray: ['Invoke', 'Payment'],
     })
-    const acct1hook3 = createHookPayload({
+    const hook3 = createHookPayload({
       version: 0,
       createFile: 'loan',
       namespace: 'loan',
       flags: SetHookFlags.hsfOverride,
       hookOnArray: ['Invoke', 'Payment'],
     })
+    const hook4 = createHookPayload({
+      version: 0,
+      createFile: 'admin',
+      namespace: 'admin',
+      flags: SetHookFlags.hsfOverride,
+      hookOnArray: ['Invoke'],
+    })
     await setHooksV3({
       client: testContext.client,
       seed: hookWallet.seed,
-      hooks: [{ Hook: acct1hook1 }, { Hook: acct1hook2 }, { Hook: acct1hook3 }],
+      hooks: [
+        { Hook: hook1 },
+        { Hook: hook2 },
+        { Hook: hook3 },
+        { Hook: hook4 },
+      ],
     } as SetHookParams)
     // console.log(hexNamespace('pool'))
     // console.log(hexNamespace('loan'))

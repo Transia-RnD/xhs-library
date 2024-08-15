@@ -5,37 +5,44 @@ import {
   XFL,
   XRPAddress,
 } from '@transia/hooks-toolkit/dist/npm/src/libs/binary-models'
-import { AmountModel } from './utils/AmountModel'
 import { IssueModel } from './utils/IssueModel'
 
+// Pool Type:
+// 0 - Private: Only invited users can join
+// 1 - Public: Anyone can join
+
+// Manager Type:
+// 0 - Passive: Managed by a group of users
+// 1 - Active: Managed by the contributors
+
 export class PoolModel extends BaseModel {
-  isType: UInt8 //
+  poolType: UInt8 //
+  managerType: UInt8 //
   issue: IssueModel //
-  details: PoolDetails //
   withdraw: Withdraw //
   cover: PoolDelegateCover //
 
   // ?? bytes
   constructor(
-    isType: UInt8, // 8 bytes / 0
+    poolType: UInt8, // 8 bytes / 0
+    managerType: UInt8, // 8 bytes / 0
     issue: IssueModel, // 40 bytes / 1
-    // details: PoolDetails, // ?? bytes / 48
     withdraw: Withdraw, // ?? bytes / 8
     cover: PoolDelegateCover // ?? bytes / 8
   ) {
     super()
-    this.isType = isType
+    this.poolType = poolType
+    this.managerType = managerType
     this.issue = issue
-    // this.details = details
     this.withdraw = withdraw
     this.cover = cover
   }
 
   getMetadata(): Metadata {
     return [
-      { field: 'isType', type: 'uint8' },
+      { field: 'poolType', type: 'uint8' },
+      { field: 'managerType', type: 'uint8' },
       { field: 'issue', type: 'model', modelClass: IssueModel },
-      // { field: 'details', type: 'model', modelClass: PoolDetails },
       { field: 'withdraw', type: 'model', modelClass: Withdraw },
       { field: 'cover', type: 'model', modelClass: PoolDelegateCover },
     ]
@@ -43,9 +50,9 @@ export class PoolModel extends BaseModel {
 
   toJSON() {
     return {
-      isType: this.isType,
+      poolType: this.poolType,
+      managerType: this.managerType,
       issue: this.issue,
-      // details: this.details,
       withdraw: this.withdraw,
       cover: this.cover,
     }
@@ -83,13 +90,13 @@ export class PoolDelegateCover extends BaseModel {
 
 export class Withdraw extends BaseModel {
   isType: UInt8 // type
-  liquidityCap: AmountModel // AmountModel
+  liquidityCap: XFL // AmountModel
   fees: Fees // AmountModel
 
   // 68 bytes
   constructor(
     isType: UInt8, // 8 bytes / 0
-    liquidityCap: AmountModel, // 8 bytes / 0
+    liquidityCap: XFL, // 8 bytes / 0
     fees: Fees // 8 bytes / 0
   ) {
     super()
@@ -101,7 +108,7 @@ export class Withdraw extends BaseModel {
   getMetadata(): Metadata {
     return [
       { field: 'isType', type: 'uint8' },
-      { field: 'liquidityCap', type: 'model', modelClass: AmountModel },
+      { field: 'liquidityCap', type: 'xfl' },
       { field: 'fees', type: 'model', modelClass: Fees },
     ]
   }
@@ -133,57 +140,6 @@ export class Fees extends BaseModel {
   toJSON() {
     return {
       managementFee: this.managementFee,
-    }
-  }
-}
-
-export class PoolDetails extends BaseModel {
-  permissions: Permissions // permissions
-
-  // 68 bytes
-  constructor(
-    permissions: Permissions // 8 bytes / 0
-  ) {
-    super()
-    this.permissions = permissions
-  }
-
-  getMetadata(): Metadata {
-    return [{ field: 'permissions', type: 'model', modelClass: Permissions }]
-  }
-
-  toJSON() {
-    return {
-      permissions: this.permissions,
-    }
-  }
-}
-
-export class Permissions extends BaseModel {
-  lenders: Permission //
-  borrowers: Permission //
-
-  // ?? bytes
-  constructor(
-    lenders: Permission, // ?? bytes / 0
-    borrowers: Permission // ?? bytes / ??
-  ) {
-    super()
-    this.lenders = lenders
-    this.borrowers = borrowers
-  }
-
-  getMetadata(): Metadata {
-    return [
-      { field: 'lenders', type: 'model', modelClass: Permission },
-      { field: 'borrowers', type: 'model', modelClass: Permission },
-    ]
-  }
-
-  toJSON() {
-    return {
-      lenders: this.lenders,
-      borrowers: this.borrowers,
     }
   }
 }
