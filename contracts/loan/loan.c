@@ -5,18 +5,19 @@ Operations:
 
 // (Loan) ops are:
     // C - Create: create loan - Invoke
-    // U - Update: update loan - Invoke
-    // D - Delete: delete loan - Invoke
     // E - End: end loan - Invoke
     // P - Payment: loan - Payment
     // R - Receive: drawdown loan - Invoke
-    // S - Security: deposit collateral - Payment
 
 
 */
 //==============================================================================
 
 #include "hookapi.h"
+
+#define ttREMIT 95
+#define sfAmounts ((15U << 16U) + 92U)
+#define sfURITokenIDs ((19U << 16U) + 99U)
 
 #define SVAR(x) &(x), sizeof(x)
 
@@ -134,6 +135,20 @@ uint8_t outstanding_key[32] = {
     0xECU, 0x1FU
 };
 
+// P2P namespace: 01B1F0D62228AF74081BA352D34CD62005D0FA355E13D46B8D5626B59CCD0D43
+uint8_t p2p_ns[32] = {
+    0x01U, 0xB1U, 0xF0U, 0xD6U, 0x22U, 0x28U, 0xAFU, 0x74U, 0x08U, 0x1BU, 
+    0xA3U, 0x52U, 0xD3U, 0x4CU, 0xD6U, 0x20U, 0x05U, 0xD0U, 0xFAU, 0x35U, 
+    0x5EU, 0x13U, 0xD4U, 0x6BU, 0x8DU, 0x56U, 0x26U, 0xB5U, 0x9CU, 0xCDU, 
+    0x0DU, 0x43U
+};
+
+// P2P account: 12102404901E288D25AD11D3EA55A05BBA077F4D
+uint8_t p2p_account[20] = {
+    0x12U, 0x10U, 0x24U, 0x04U, 0x90U, 0x1EU, 0x28U, 0x8DU, 0x25U, 0xADU, 
+    0x11U, 0xD3U, 0xEAU, 0x55U, 0xA0U, 0x5BU, 0xBAU, 0x07U, 0x7FU, 0x4DU
+};
+
 #define YEARLY 6108081094714392576U // 12 months
 
 #define POOL_MODEL 114U
@@ -142,6 +157,7 @@ uint8_t outstanding_key[32] = {
 
 #define LOAN_MODEL 126U
 #define LOAN_STATE 0U
+#define BORROWER_OFFSET 1U
 #define GRACE_OFFSET 70U // 72 - 75
 #define INTERVAL_OFFSET 74U // 76 - 79
 #define START_OFFSET 78U // 80 - 83
@@ -165,20 +181,21 @@ int64_t hook(uint32_t r)
     otxn_field(otxn_accid + 12, 20, sfAccount);
 
     int64_t tt = otxn_type();
-    if (tt != ttINVOKE && tt != ttPAYMENT)
-        NOPE("loan.c: Rejecting non-Invoke, non-Payment txn.");
+    if (tt != ttINVOKE && tt != ttPAYMENT && tt != ttREMIT)
+        NOPE("loan.c: Rejecting non-Invoke, non-Payment, non-remit txn.");
 
     // if (!BUFFER_EQUAL_20(hook_accid + 12, otxn_accid + 12) && tt == ttINVOKE)
     //     DONE("loan.c: passing incoming invoke txn");
 
     uint8_t amount_buffer[48];
     otxn_slot(1);
-    slot_subfield(1, sfAmount, 2);
 
     int64_t amount_xfl;
     uint32_t flags;
     if (tt == ttPAYMENT)
     {
+        slot_subfield(1, sfAmount, 2);
+
         // this will fail if flags isn't in the txn, that's also ok.
         otxn_field(&flags, 4, sfFlags);
         
@@ -223,9 +240,29 @@ int64_t hook(uint32_t r)
     }
 
     uint8_t loan_model[LOAN_MODEL];
-    if (op == 'U' || op == 'D' || op == 'P' || op == 'R')
+    uint8_t uri_hash[32];
+    uint8_t loan_hash[32];
+    if (op == 'P' || op == 'R')
     {
-        if (state(SBUF(loan_model), hook_accid + 12, 20) == DOESNT_EXIST)
+        if (otxn_param(SBUF(uri_hash), "URID", 4) != 32)
+            NOPE("loan.c: Missing URID parameter on Invoke.");
+
+        uint8_t urit_buff[34];
+        util_keylet(SBUF(urit_buff), KEYLET_UNCHECKED, uri_hash, 32, 0, 0, 0, 0);
+        if (slot_set(SBUF(urit_buff), 1) != 1)
+            rollback(SBUF("loan.c: Could not load keylet"), __LINE__);
+        if (slot_subfield(1, sfOwner, 2) != 2)
+            rollback(SBUF("loan.c: Could not load sfOwner"), __LINE__);
+        if (slot_subfield(1, sfDigest, 3) != 3)
+            rollback(SBUF("loan.c: Could not load sfDigest"), __LINE__);
+        
+        uint8_t loan_owner[20];
+        slot(SBUF(loan_owner), 2);
+        if (!BUFFER_EQUAL_20(loan_owner, otxn_accid + 12))
+            NOPE("loan.c: No Permission for Operation.");
+
+        slot(SBUF(loan_hash), 3);
+        if (state(SBUF(loan_model), SBUF(loan_hash)) == DOESNT_EXIST)
         {
             NOPE("loan.c: Loan does not exist.");
         }
@@ -236,18 +273,58 @@ int64_t hook(uint32_t r)
     {
         case 'C': // create loan
         {
+            if (slot_subfield(1, sfURITokenIDs, 2) != 2)
+                NOPE("loan.c: Missing URITokenIDs.");
+
+            uint8_t uri_hash[34];
+            slot(SBUF(uri_hash), 2);
+            
+            // check how many currencies were sent
+            int64_t sent_currency_count = slot_subfield(1, sfAmounts, 4) == 4
+                ? slot_count(4)
+                : 0;
+            
+            if (sent_currency_count != 1)
+                NOPE("loan.c: Invalid number of currencies sent.");
+
+            if (slot_subarray(4, 0, 5) != 5)
+                NOPE("loan.c: Error slotting currency");
+
+            slot_subfield(5, sfAmount, 6);
+            slot(SBUF(amount_buffer), 6);
+
+            amount_xfl = slot_float(6);
+
+            if (amount_xfl < 0 || !float_compare(amount_xfl, 0, COMPARE_GREATER))
+                NOPE("loan.c: Invalid sfAmount.");
+            
+            uint8_t urit_buff[34];
+            util_keylet(SBUF(urit_buff), KEYLET_UNCHECKED, uri_hash + 1, 32, 0, 0, 0, 0);
+            if (slot_set(SBUF(urit_buff), 1) != 1)
+                rollback(SBUF("loan.c: Could not load keylet"), __LINE__);
+            if (slot_subfield(1, sfOwner, 2) != 2)
+                rollback(SBUF("loan.c: Could not load sfOwner"), __LINE__);
+            if (slot_subfield(1, sfDigest, 3) != 3)
+                rollback(SBUF("loan.c: Could not load sfDigest"), __LINE__);
+            
+            uint8_t urit_owner[20];
+            slot(SBUF(urit_owner), 2);
+
+            uint8_t urit_digest[32];
+            slot(SBUF(urit_digest), 3);
+
             uint8_t _loan_model[LOAN_MODEL];
-            if (state(SBUF(_loan_model), hook_accid + 12, 20) != DOESNT_EXIST)
+            if (state(SBUF(_loan_model), SBUF(urit_digest)) != DOESNT_EXIST)
             {
                 NOPE("loan.c: Loan already exists.");
             }
             
-            if (otxn_param(SBUF(_loan_model), "LM", 2) == DOESNT_EXIST)
+            if(state_foreign(SBUF(_loan_model), SBUF(urit_digest), SBUF(p2p_ns), SBUF(p2p_account)) < 0)
             {
-                NOPE("loan.c: Missing LM parameter.");
+                NOPE("loan.c: Could not get Loan from P2P.");
             }
 
-            if(state_set(SBUF(_loan_model), hook_accid + 12, 20) < 0)
+            if(state_set(SBUF(_loan_model), SBUF(urit_digest)) < 0)
             {
                 NOPE("loan.c: Could not create Loan.");
             }
@@ -256,17 +333,32 @@ int64_t hook(uint32_t r)
             int64_t requested_xfl = FLIP_ENDIAN_64(UINT64_FROM_BUF(_loan_model + REQUESTED_OFFSET));
             total_outstanding = float_sum(total_outstanding, requested_xfl);
             state_set(SVAR(total_outstanding), outstanding_key, 32);
+
+            // Get the current collateral state
+            int64_t collateral_xfl[8];
+            state_foreign(SVAR(collateral_xfl), SBUF(urit_digest), collateral_ns, 32, hook_accid + 12, 20);
+
+            // FAILURE
+            // The Asset deposited is NOT equal to the asset of the Lending Pool.
+            TRACEHEX(amount_buffer);
+            // VALIDATE: Asset Issuer
+            if (BUFFER_EQUAL_20(amount_buffer + 8, pool_model + ISSUER_OFFSET))
+            {
+                    NOPE("loan.c: Collateral and Lending Pool Amount.issuer are the same.");
+            }
+
+            // VALIDATE: Asset Currency
+            if (BUFFER_EQUAL_20(amount_buffer + 28, pool_model + CURRENCY_OFFSET))
+            {
+                    NOPE("loan.c: Collateral and Lending Pool Amount.currency are the same.");
+            }
+
+            // Increment the collateral
+            int64_t final_collateral = float_sum(collateral_xfl, amount_xfl);
+
+            // Store the Collateral in state
+            state_foreign_set(SVAR(final_collateral), SBUF(urit_digest), collateral_ns, 32, hook_accid + 12, 20);
             DONE("loan.c: Created Loan.");
-        }
-
-        case 'U': // update loan
-        {
-            DONE("loan.c: Updated Loan.");
-        }
-
-        case 'D': // delete loan
-        {
-            DONE("loan.c: Deleted Loan.");
         }
 
         case 'E': // end loan
@@ -290,7 +382,7 @@ int64_t hook(uint32_t r)
             {
                 // Update the loan state
                 UINT8_TO_BUF(loan_model + LOAN_STATE, 2);
-                state_set(SBUF(loan_model), hook_accid + 12, 20);
+                state_set(SBUF(loan_model), SBUF(loan_hash));
                 DONE("loan.c: Loan Defaulted.");
             }
 
@@ -324,7 +416,7 @@ int64_t hook(uint32_t r)
             {
                 // Update the loan state
                 UINT8_TO_BUF(loan_model + LOAN_STATE, 2);
-                state_set(SBUF(loan_model), hook_accid + 12, 20);
+                state_set(SBUF(loan_model), SBUF(loan_hash));
                 accept(SBUF("loan.c: Transaction Success (End Loan)."), __LINE__);
             }
             NOPE("loan.c: Transaction Failed (End Loan).");
@@ -427,7 +519,7 @@ int64_t hook(uint32_t r)
             TRACEVAR(drawable_xfl)
             UINT64_TO_BUF(loan_model + DRAWABLE_OFFSET, FLIP_ENDIAN_64(drawable_xfl));
             // Update the loan state
-            state_set(SBUF(loan_model), hook_accid + 12, 20);
+            state_set(SBUF(loan_model), SBUF(loan_hash));
             DONE("loan.c: Payback Loan.");
         }
 
@@ -464,42 +556,10 @@ int64_t hook(uint32_t r)
                 int64_t final_drawable = float_sum(drawable_funds, float_negate(amt_xfl));
                 TRACEVAR(final_drawable);
                 INT64_TO_BUF(loan_model + DRAWABLE_OFFSET, FLIP_ENDIAN_64(final_drawable));
-                state_set(SBUF(loan_model), hook_accid + 12, 20);
+                state_set(SBUF(loan_model), SBUF(loan_hash));
                 accept(SBUF("loan.c: Transaction Success (Receive Loan)."), __LINE__);
             }
             NOPE("loan.c: Transaction Failed (Receive Loan).");
-        }
-
-        case 'S': // deposit collateral
-        {
-            TRACESTR("loan.c: Deposit Collateral.");
-            // TODO: Cant deposit more collateral than the loan amount.
-            
-            // Get the current collateral state
-            int64_t collateral_xfl[8];
-            state_foreign(SVAR(collateral_xfl), hook_accid + 12, 20, collateral_ns, 32, hook_accid + 12, 20);
-
-            // FAILURE
-            // The Asset deposited is NOT equal to the asset of the Lending Pool.
-            TRACEHEX(amount_buffer);
-            // VALIDATE: Asset Issuer
-            if (BUFFER_EQUAL_20(amount_buffer + 8, pool_model + ISSUER_OFFSET))
-            {
-                    NOPE("loan.c: Collateral and Lending Pool Amount.issuer are the same.");
-            }
-
-            // VALIDATE: Asset Currency
-            if (BUFFER_EQUAL_20(amount_buffer + 28, pool_model + CURRENCY_OFFSET))
-            {
-                    NOPE("loan.c: Collateral and Lending Pool Amount.currency are the same.");
-            }
-
-            // Increment the collateral
-            int64_t final_collateral = float_sum(collateral_xfl, amount_xfl);
-
-            // Store the Collateral in state
-            state_foreign_set(SVAR(final_collateral), hook_accid + 12, 20, collateral_ns, 32, hook_accid + 12, 20);
-            DONE("loan.c: Deposited Collateral.");
         }
 
         default:

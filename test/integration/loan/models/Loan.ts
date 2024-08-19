@@ -11,7 +11,6 @@ import {
 
 export class LoanModel extends BaseModel {
   isType: UInt8 //
-  // nonce: UInt32 //
   borrower: XRPAddress //
   lender: XRPAddress //
   poolId: Hash256 //
@@ -23,9 +22,8 @@ export class LoanModel extends BaseModel {
 
   // ?? bytes
   constructor(
-    isType: UInt8, // 8 bytes / 0
-    // nonce: UInt32, // ?? bytes / 8
-    borrower: XRPAddress, // ?? bytes / 8
+    isType: UInt8, // 1 bytes / 0
+    borrower: XRPAddress, // ?? bytes / 1
     // lender: XRPAddress, // ?? bytes / 8
     // poolId: Hash256, // ?? bytes / 8
     state: UInt8, // ?? bytes / 8
@@ -36,7 +34,6 @@ export class LoanModel extends BaseModel {
   ) {
     super()
     this.isType = isType
-    // this.nonce = nonce
     this.borrower = borrower
     // this.lender = lender
     // this.poolId = poolId
@@ -50,7 +47,6 @@ export class LoanModel extends BaseModel {
   getMetadata(): Metadata {
     return [
       { field: 'isType', type: 'uint8' },
-      // { field: 'nonce', type: 'uint32' },
       { field: 'borrower', type: 'xrpAddress' },
       // { field: 'lender', type: 'xrpAddress' },
       // { field: 'poolId', type: 'hash256' },
@@ -70,7 +66,6 @@ export class LoanModel extends BaseModel {
   toJSON() {
     return {
       isType: this.isType,
-      // nonce: this.nonce,
       borrower: this.borrower,
       // lender: this.lender,
       // poolId: this.poolId,

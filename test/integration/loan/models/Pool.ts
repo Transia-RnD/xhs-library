@@ -145,8 +145,8 @@ export class Fees extends BaseModel {
 }
 
 export class Permission extends BaseModel {
-  isPublic: UInt8 // id
-  accounts: AccountModel[] // ticket price
+  isPublic: UInt8 // 0 is public, 1 is private
+  accounts: AccountModel[] // array of accounts
 
   // ?? bytes
   constructor(

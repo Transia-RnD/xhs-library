@@ -187,15 +187,16 @@ int64_t hook(uint32_t r)
     TRACEVAR(member_id);
 
     // { 'S|D', '\0 + topicid' }
-    uint8_t topic[5];
+    uint8_t topic[2];
     int64_t result = otxn_param(SBUF(topic), "T", 1);
     TRACEHEX(topic);
+    TRACEVAR(result);
     uint8_t t = topic[0]; // topic type
     uint8_t n = topic[1]; // number (seats | other)
 
     TRACEHEX(t);
 
-    if (result != 5 || (t != 'S' && // topic type: seat (L1)
+    if (result != 2 || (t != 'S' && // topic type: seat (L1)
                         t != 'L'))  // topic type: distribution
         NOPE("admin.c: valid TOPIC must be specified as otxn parameter.");
 
@@ -203,9 +204,11 @@ int64_t hook(uint32_t r)
         NOPE("admin.c: valid seat topics are 0 through 19.");
 
     uint8_t topic_data[32];
-    uint8_t topic_size = t == 'L' ? 28 : t == 'S' ? 20 : 0;
+    uint8_t topic_size = t == 'L' ? 32 : t == 'S' ? 20 : 0;
 
     uint8_t padding = 32 - topic_size;
+    TRACEVAR(padding);
+    TRACEVAR(topic_size);
     result = otxn_param(topic_data + padding, topic_size, "V", 1);
     if (result != topic_size)
         NOPE("admin.c: missing or incorrect size of VOTE data for TOPIC type.");
@@ -234,34 +237,34 @@ int64_t hook(uint32_t r)
     int64_t previous_topic_size = state(previous_topic_data + padding, topic_size, SBUF(otxn_accid));
     TRACEHEX(previous_topic_data);
 
-    if (previous_topic_size == topic_size && previous_topic_data[0] != 0)
-    {
-        DONE("admin.c: proposal is closed.");
-    }
+    // if (previous_topic_size == topic_size && previous_topic_data[0] != 0)
+    // {
+    //     DONE("admin.c: proposal is closed.");
+    // }
 
-    uint8_t previous_vote_data[32];
-    int64_t previous_vote_size = state(previous_vote_data + padding, topic_size, otxn_accid + 2, 4);
-    if (previous_vote_size == topic_size && BUFFER_EQUAL_32(previous_vote_data, topic_data))
-    {
-        DONE("admin.c: loan is already approved.");
-    }
+    // uint8_t previous_vote_data[32];
+    // int64_t previous_vote_size = state(previous_vote_data + padding, topic_size, otxn_accid + 2, 4);
+    // if (previous_vote_size == topic_size && BUFFER_EQUAL_32(previous_vote_data, topic_data))
+    // {
+    //     DONE("admin.c: loan is already approved.");
+    // }
 
-    uint8_t previous_quote_data[32];
-    uint8_t quote_key[5];
-    quote_key[0] = 'L';
-    quote_key[1] = n;
-    quote_key[2] = topic[2];
-    quote_key[3] = topic[3];
-    quote_key[4] = topic[4];
-    int64_t previous_quote_size = state(previous_quote_data, 28, quote_key, 5);
-    TRACEHEX(quote_key);
-    TRACEHEX(previous_quote_data);
-    TRACEHEX(previous_vote_data);
-    TRACEVAR(previous_quote_size);
-    if (previous_quote_size != 28)
-    {
-        DONE("admin.c: loan doesn't exist.");
-    }
+    // uint8_t previous_quote_data[32];
+    // uint8_t loan_key[5];
+    // loan_key[0] = 'L';
+    // loan_key[1] = n;
+    // loan_key[2] = topic[2];
+    // loan_key[3] = topic[3];
+    // loan_key[4] = topic[4];
+    // int64_t previous_quote_size = state(previous_quote_data, 32, loan_key, 5);
+    // TRACEHEX(loan_key);
+    // TRACEHEX(previous_quote_data);
+    // TRACEHEX(previous_vote_data);
+    // TRACEVAR(previous_quote_size);
+    // if (previous_quote_size != 32)
+    // {
+    //     DONE("admin.c: loan doesn't exist.");
+    // }
 
     // check if the vote they're making has already been cast before,
     // if it is identical to their existing vote for this topic then just end with tesSUCCESS
@@ -318,17 +321,13 @@ int64_t hook(uint32_t r)
 
     switch (t)
     {
-    case 'Q':
+    case 'L':
     {
         TRACESTR(SBUF("LOAN APPROVED"));
         uint8_t id[5];
         id[0] = 'L';
         id[1] = n;
-        id[2] = topic[2];
-        id[3] = topic[3];
-        id[4] = topic[4];
-        // save quote data
-        ASSERT(state_set(topic_data + 4, 28, id, 5) == 28);
+        ASSERT(state_set(topic_data, 32, id, 2) == 32);
         DONE("admin.c: loan approved.");
     }
     case 'S':

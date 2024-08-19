@@ -104,27 +104,26 @@ uint8_t curr_nav[20] = {
     0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
     0x00U, 0x00U, 0x4EU, 0x41U, 0x56U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U};
 
-// liquidity namespace: D6F390A642BEEC7DD0A9F450FC9FC61324683A3BEFCDD398A01BD4995D8BFBB6
+// liquidity namespace: 59B47E9EC520A9513F404B325FA84662202ADBB134C73CC57CBB0F7CEA25C689
 uint8_t liquidity_ns[32] = {
-    0xD6U, 0xF3U, 0x90U, 0xA6U, 0x42U, 0xBEU, 0xECU, 0x7DU, 0xD0U, 0xA9U,
-    0xF4U, 0x50U, 0xFCU, 0x9FU, 0xC6U, 0x13U, 0x24U, 0x68U, 0x3AU, 0x3BU,
-    0xEFU, 0xCDU, 0xD3U, 0x98U, 0xA0U, 0x1BU, 0xD4U, 0x99U, 0x5DU, 0x8BU,
-    0xFBU, 0xB6U};
+    0x59U, 0xB4U, 0x7EU, 0x9EU, 0xC5U, 0x20U, 0xA9U, 0x51U, 0x3FU, 0x40U,
+    0x4BU, 0x32U, 0x5FU, 0xA8U, 0x46U, 0x62U, 0x20U, 0x2AU, 0xDBU, 0xB1U,
+    0x34U, 0xC7U, 0x3CU, 0xC5U, 0x7CU, 0xBBU, 0x0FU, 0x7CU, 0xEAU, 0x25U,
+    0xC6U, 0x89U};
 
-// admin namespace: 35AB87618C9FC09E53A67F4CB194FC4B51D327EC5D21C6958B00A623D6F8EC1F
+// admin namespace: 8C6976E5B5410415BDE908BD4DEE15DFB167A9C873FC4BB8A81F6F2AB448A918
 uint8_t admin_ns[32] = {
-    0x35U, 0xABU, 0x87U, 0x61U, 0x8CU, 0x9FU, 0xC0U, 0x9EU, 0x53U, 0xA6U, 
-    0x7FU, 0x4CU, 0xB1U, 0x94U, 0xFCU, 0x4BU, 0x51U, 0xD3U, 0x27U, 0xECU, 
-    0x5DU, 0x21U, 0xC6U, 0x95U, 0x8BU, 0x00U, 0xA6U, 0x23U, 0xD6U, 0xF8U, 
-    0xECU, 0x1FU
-};
+    0x8CU, 0x69U, 0x76U, 0xE5U, 0xB5U, 0x41U, 0x04U, 0x15U, 0xBDU, 0xE9U,
+    0x08U, 0xBDU, 0x4DU, 0xEEU, 0x15U, 0xDFU, 0xB1U, 0x67U, 0xA9U, 0xC8U,
+    0x73U, 0xFCU, 0x4BU, 0xB8U, 0xA8U, 0x1FU, 0x6FU, 0x2AU, 0xB4U, 0x48U,
+    0xA9U, 0x18U};
 
-// loan namespace: 470CC828CA6A4681034F21E22CECBEEC8BB450EB204559C82932B28F3DFB19BC
+// loan namespace: 472BBF14923E2E7CEFD8529825C401E8D1A2937B96DD697A6D1C75C53E6CCA3A
 uint8_t loan_ns[32] = {
-    0x47U, 0x0CU, 0xC8U, 0x28U, 0xCAU, 0x6AU, 0x46U, 0x81U, 0x03U, 0x4FU,
-    0x21U, 0xE2U, 0x2CU, 0xECU, 0xBEU, 0xECU, 0x8BU, 0xB4U, 0x50U, 0xEBU,
-    0x20U, 0x45U, 0x59U, 0xC8U, 0x29U, 0x32U, 0xB2U, 0x8FU, 0x3DU, 0xFBU,
-    0x19U, 0xBCU};
+    0x47U, 0x2BU, 0xBFU, 0x14U, 0x92U, 0x3EU, 0x2EU, 0x7CU, 0xEFU, 0xD8U,
+    0x52U, 0x98U, 0x25U, 0xC4U, 0x01U, 0xE8U, 0xD1U, 0xA2U, 0x93U, 0x7BU,
+    0x96U, 0xDDU, 0x69U, 0x7AU, 0x6DU, 0x1CU, 0x75U, 0xC5U, 0x3EU, 0x6CU,
+    0xCAU, 0x3AU};
 
 // outstanding key: 35AB87618C9FC09E53A67F4CB194FC4B51D327EC5D21C6958B00A623D6F8EC1F
 uint8_t outstanding_key[32] = {
@@ -135,8 +134,8 @@ uint8_t outstanding_key[32] = {
 };
 
 #define POOL_MODEL 114U
-#define ISSUER_OFFSET 1U
-#define CURRENCY_OFFSET 21U
+#define ISSUER_OFFSET 2U
+#define CURRENCY_OFFSET 22U
 
 int64_t hook(uint32_t r)
 {
@@ -151,9 +150,6 @@ int64_t hook(uint32_t r)
     int64_t tt = otxn_type();
     if (tt != ttINVOKE && tt != ttPAYMENT)
         NOPE("pool.c: Rejecting non-Invoke, non-Payment txn.");
-
-    if (!BUFFER_EQUAL_20(hook_accid + 12, otxn_accid + 12) && tt == ttINVOKE)
-        DONE("pool.c: passing incoming invoke txn");
 
     uint8_t amount_buffer[48];
     otxn_slot(1);
@@ -178,9 +174,8 @@ int64_t hook(uint32_t r)
             NOPE("native_fund_nfo.c: Invalid sfAmount.");
     }
 
-    int64_t total_nav = float_one();
+    int64_t total_nav = 0;
     state_foreign(SVAR(total_nav), hook_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
-    TRACEVAR(total_nav);
 
     // Operation
     uint8_t op;
@@ -191,6 +186,9 @@ int64_t hook(uint32_t r)
     uint8_t sop;
     if ((op == 'P' || op == 'L') && otxn_param(&sop, 1, "SOP", 3) != 1)
         NOPE("User: Missing SOP parameter on Pool or Liquidity Operation.");
+
+    if (op == 'L' && (sop == 'D' || sop == 'W') && tt != ttPAYMENT)
+        NOPE("pool.c: Deposit/Withdraw Liquidity operation must be payment.");
 
     // TXN: PREPARE: Init
     etxn_reserve(1);
@@ -208,7 +206,7 @@ int64_t hook(uint32_t r)
     {
         if (state(SBUF(pool_model), hook_accid + 12, 20) == DOESNT_EXIST)
         {
-            NOPE("loan.c: Pool does not exist.");
+            NOPE("pool.c: Pool does not exist.");
         }
     }
 
@@ -260,19 +258,12 @@ int64_t hook(uint32_t r)
                 case 'D': // deposit liquidity
                 {
                     TRACESTR("pool.c: Deposit Liquidity.");
-                    
-                    int64_t _iop = float_divide(amount_xfl, total_nav);
-                    TRACEVAR(_iop);
+                    int64_t _iop = float_divide(amount_xfl, total_nav == 0 ? float_one() : total_nav);
                     if (_iop < 0)
-                        NOPE("native_fund_nfo.c: Error computing ownership %");
+                        NOPE("pool.c: Error computing ownership %");
 
-                    int64_t _owner_nav = float_multiply(total_nav, _iop);
-                    TRACEVAR(_owner_nav);
+                    int64_t _owner_nav = float_multiply(total_nav == 0 ? float_one() : total_nav, _iop);
                     total_nav = float_sum(total_nav, _owner_nav);
-                    // Calculate Withdrawable
-                    int64_t withdrawable = total_nav;
-                    // Increase Total Value
-                    // Increase Available Liquidity
 
                     float_sto(AMOUNT_OUT, 49, curr_nav, 20, hook_accid + 12, 20, _owner_nav, sfAmount);
                     PREPARE_REMIT_TXN(hook_accid + 12, otxn_accid + 12);
@@ -280,101 +271,94 @@ int64_t hook(uint32_t r)
                     // TXN: Emit/Send Txn
                     uint8_t emithash[32];
                     int64_t emit_result = emit(SBUF(emithash), SBUF(txn));
-                    TRACEVAR(emit_result)
                     if (emit_result > 0)
                     {
-                        TRACEVAR(total_nav);
                         uint8_t dump[8];
                         if (!manager_mode && state_foreign(SVAR(dump), otxn_accid + 12, 20, SBUF(admin_ns), hook_accid + 12, 20) == DOESNT_EXIST)
                         {
                             // member count
                             int64_t member_count = state_foreign(0, 0, "MC", 2, SBUF(admin_ns), hook_accid + 12, 20);
+                            member_count = member_count == DOESNT_EXIST ? 0 : member_count;
                             
                             // increment member count
                             member_count++;
+                            uint8_t mc = member_count;
 
                             // reverse key
-                            ASSERT(state_foreign_set(otxn_accid + 12, 20, SVAR(member_count), SBUF(admin_ns), hook_accid + 12, 20) == 20);
+                            ASSERT(state_foreign_set(otxn_accid + 12, 20, &mc, 1, SBUF(admin_ns), hook_accid + 12, 20) == 20);
 
                             // forward key
-                            ASSERT(state_foreign_set(SVAR(member_count), otxn_accid + 12, 20, SBUF(admin_ns), hook_accid + 12, 20) == 1);
+                            ASSERT(state_foreign_set(&mc, 1, otxn_accid + 12, 20, SBUF(admin_ns), hook_accid + 12, 20) == 1);
 
-                            // update member count
-                            ASSERT(0 < state_foreign_set(SVAR(member_count), "MC", 2, SBUF(admin_ns), hook_accid + 12, 20));
+                            // update member coun
+                            ASSERT(0 < state_foreign_set(&mc, 1, "MC", 2, SBUF(admin_ns), hook_accid + 12, 20));
                         }
                         state_foreign_set(SVAR(_owner_nav), otxn_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
                         state_foreign_set(SVAR(total_nav), hook_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
-                        accept(SBUF("pool.c: Transaction Complete."), __LINE__);
+                        accept(SBUF("pool.c: Transaction Complete (Deposit Liquidity)."), __LINE__);
                     }
-                    NOPE("pool.c: Transaction Failed.");
+                    NOPE("pool.c: Transaction Failed (Deposit Liquidity).");
                 }
                 case 'W': // withdraw liquidity
                 {
                     TRACESTR("pool.c: Withdraw Liquidity.");
-                    // Get OwnerNav from State
                     int64_t owner_nav;
                     state_foreign(SVAR(owner_nav), otxn_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
                     int64_t _iop = float_divide(owner_nav, total_nav);
                     if(_iop < 0)
-                        NOPE("native_fund_nfo.c: Error computing ownership %");
+                        NOPE("pool.c: Error computing ownership %");
 
                     int64_t total_outstanding;
                     state_foreign(SVAR(total_outstanding), SBUF(outstanding_key), SBUF(loan_ns), hook_accid + 12, 20);
-                    int64_t withdrawable = float_multiply(total_outstanding, _iop);
+                    int64_t withdrawable_percent = float_multiply(total_outstanding == 0 ? float_one() : total_outstanding, _iop);
+                    int64_t withdrawable_xfl = float_multiply(total_nav, withdrawable_percent);
 
-                    TRACEVAR(_iop);
+                    if (BUFFER_EQUAL_20(amount_buffer + 8, curr_nav) == 0)
+                        NOPE("pool.c: Currency mismatch.");
                     
-                    uint8_t amt_buf[48];
-                    if (otxn_param(SBUF(amt_buf), "AMT", 3) < 0)
-                        NOPE("loan.c: Missing AMT parameter.");
+                    if (BUFFER_EQUAL_20(amount_buffer + 28, hook_accid + 12) == 0)
+                        NOPE("pool.c: Issuer mismatch.");
                     
-                    int64_t amt_xfl = *((int64_t *)amt_buf);
-                    TRACEVAR(amt_xfl);
-                    
-                    if (amt_xfl < 0 || !float_compare(amt_xfl, 0, COMPARE_GREATER))
-                        NOPE("loan.c: Invalid sfAmount.");
+                    if (amount_xfl < 0 || !float_compare(amount_xfl, 0, COMPARE_GREATER))
+                        NOPE("pool.c: Invalid sfAmount.");
 
-                    if (!float_compare(owner_nav, amt_xfl, COMPARE_GREATER))
-                        NOPE("loan.c: Insufficient funds.");
+                    if (!float_compare(owner_nav, amount_xfl, COMPARE_GREATER | COMPARE_EQUAL))
+                        NOPE("pool.c: Insufficient funds.");
 
-                    if (!float_compare(withdrawable, amt_xfl, COMPARE_GREATER))
-                        NOPE("loan.c: Insufficient withdrawable funds.");
+                    if (!float_compare(withdrawable_xfl, amount_xfl, COMPARE_GREATER | COMPARE_EQUAL))
+                        NOPE("pool.c: Insufficient withdrawable funds.");
 
-                    int64_t _owner_nav = float_sum(owner_nav, float_negate(amt_xfl));
-                    TRACEVAR(_owner_nav);
-                    total_nav = float_sum(total_nav, float_negate(amt_xfl));
-                    TRACEVAR(total_nav);
-                    
-                    // USD - USD(Issuer)
-                    float_sto(AMOUNT_OUT, 49, pool_model + CURRENCY_OFFSET, 20, pool_model + ISSUER_OFFSET, 20, _owner_nav, sfAmount);
+                    int64_t _owner_nav = float_sum(owner_nav, float_negate(amount_xfl));
+                    total_nav = float_sum(total_nav, float_negate(amount_xfl));
+
+                    float_sto(AMOUNT_OUT, 49, pool_model + CURRENCY_OFFSET, 20, pool_model + ISSUER_OFFSET, 20, amount_xfl, sfAmount);
                     PREPARE_REMIT_TXN(hook_accid + 12, otxn_accid + 12);
 
                     // TXN: Emit/Send Txn
                     uint8_t emithash[32];
                     int64_t emit_result = emit(SBUF(emithash), SBUF(txn));
-                    TRACEVAR(emit_result)
                     if (emit_result > 0)
                     {
-                        TRACEVAR(total_nav);
                         uint8_t dump[8];
                         if (!manager_mode && _owner_nav == 0)
                         {
                             // member count
                             int64_t member_count = state_foreign(0, 0, "MC", 2, SBUF(admin_ns), hook_accid + 12, 20);
+                            int64_t seat_num = state_foreign(0, 0, otxn_accid + 12, 20, SBUF(admin_ns), hook_accid + 12, 20);
                             
                             // decrement member count
                             member_count--;
+                            uint8_t mc = member_count;
 
-                            // reverse key 
-                            uint8_t n = 0;
-                            // reverse key TODO: should remove exact seat number
-                            ASSERT(state_foreign_set(0, 0, &n, 1, SBUF(admin_ns), hook_accid + 12, 20) == 20);
+                            // reverse key
+                            uint8_t n = seat_num;
+                            ASSERT(state_foreign_set(0, 0, &n, 1, SBUF(admin_ns), hook_accid + 12, 20) == 0);
 
                             // forward key
-                            ASSERT(state_foreign_set(0, 0, otxn_accid + 12, 20, SBUF(admin_ns), hook_accid + 12, 20) == 1);
+                            ASSERT(state_foreign_set(0, 0, otxn_accid + 12, 20, SBUF(admin_ns), hook_accid + 12, 20) == 0);
 
                             // update member count
-                            ASSERT(0 < state_foreign_set(SVAR(member_count), "MC", 2, SBUF(admin_ns), hook_accid + 12, 20));
+                            ASSERT(0 < state_foreign_set(&mc, 1, "MC", 2, SBUF(admin_ns), hook_accid + 12, 20));
                         }
 
                         state_foreign_set(SVAR(_owner_nav), otxn_accid + 12, 20, SBUF(liquidity_ns), hook_accid + 12, 20);
