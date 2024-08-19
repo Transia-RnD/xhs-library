@@ -174,6 +174,8 @@ int64_t hook(uint32_t r)
         NOPE("p2p_loan.c: Missing LH parameter.");
     }
 
+    // TODO: Block U|D if loan is not owned by the p2p loan hook.
+
     // action
     switch (op)
     {
@@ -258,6 +260,7 @@ int64_t hook(uint32_t r)
                 NOPE("p2p_loan.c: Could not delete Loan.");
             }
 
+            // TODO: Burn Token
             DONE("p2p_loan.c: Deleted Loan.");
         }
 

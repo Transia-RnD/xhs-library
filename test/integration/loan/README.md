@@ -15,3 +15,5 @@
 xrpld-netgen up:standalone --version=2024.8.19-HEAD+957 --network_id=21338
 
 xrpld-netgen down:standalone --name=xahau-2024.8.19-HEAD+957
+
+TODO: Add Weak TSH Hook for URIToken Issuer to update loan status on p2p when loan uritoken is transfered.
