@@ -2,7 +2,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  testMatch: ['**/test/integration/**/*.test.ts'],
+  testMatch: ['**/test/integration-js/**/*.test.ts'],
 
   // Set the timeout value for all tests to 2 minutes (default is 5 seconds)
   testTimeout: 120000,

@@ -77,7 +77,7 @@ jobs:
 
       - name: Run docker in background
         run: |
-          docker run --detach --rm --name rippled-service -p 6006:6006 --health-cmd="wget localhost:6006 || exit 1" --health-interval=5s --health-retries=10 --health-timeout=2s transia/xahau-2024125-release738-xahau
+          docker run --detach --rm --name rippled-service -p 6006:6006 --health-cmd="wget localhost:6006 || exit 1" --health-interval=5s --health-retries=10 --health-timeout=2s transia/xahaudjs:latest
 
       - name: Setup npm version 7
         run: |
@@ -102,11 +102,11 @@ jobs:
         if: steps.cache-nodemodules.outputs.cache-hit != 'true'
         run: yarn install
 
-      - run: yarn run build:hooks
-      - run: yarn run test:integration
+      - run: yarn run build:hooks-c
+      - run: yarn run test:integration-c
         env:
-          C2WASM_CLI_HOST: https://hook-buildbox.xrpl.org
-          RIPPLED_ENV: standalone
+          HOOKS_COMPILE_HOST: https://hook-buildbox.xrpl.org
+          XRPLD_ENV: standalone
       
       - name: Stop docker container
         if: always()
