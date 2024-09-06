@@ -43,24 +43,39 @@ The Loan component manages individual loan inside the approved pool. Its primary
 
 ### P2PLoan
 
-The P2PLoan component manages individual loan requests and their lifecycle. Its primary functions include:
+The P2PLoan component manages individual loan requests and their lifecycle, serving as a central location for all loans while they are pending. Its primary functions include:
 
-- **Create P2PLoan**: Initiate a peer-to-peer loan request.
-- **Update P2PLoan**: Modify the terms or status of an existing P2PLoan.
-- **Delete P2PLoan**: Remove a P2PLoan request from the system.
+- **Create P2PLoan**: Initiate a peer-to-peer loan request. Borrowers can specify the amount and terms of the loan.
+  
+- **Update P2PLoan**: Modify the terms or status of an existing P2PLoan. This allows borrowers to adjust their requests based on feedback or changing circumstances.
+
+- **Delete P2PLoan**: Remove a P2PLoan request if it is no longer needed or if the borrower decides not to proceed.
+
+This structure ensures that all pending loans are centralized, facilitating a streamlined approval process and enhancing transparency within the lending ecosystem.
 
 ## Admin Aspect
 
-The admin aspect of the Loans Hook is crucial for managing the approval process of loans. There are two management structures:
+The admin aspect of the Loans Hook is essential for overseeing the loan approval process, ensuring that loans are evaluated fairly and transparently. This section outlines the two management structures available for loan approvals and emphasizes the importance of the collective decision-making process involved in approving loans.
+
+### Management Structures
 
 1. **Pool Managed**: 
-   - Each pool member has one vote to approve loans.
-   - The pool collectively decides on loan approvals, ensuring democratic participation.
+   - In this structure, each member of the pool has one vote to approve loans. This democratic approach allows all members to participate in the decision-making process, fostering a sense of community and shared responsibility. The collective voting ensures that loan approvals are not solely based on the discretion of a few individuals but rather reflect the consensus of the entire pool. This can lead to more balanced and well-considered decisions regarding loan viability.
 
 2. **Manager Managed**: 
-   - Each manager has one vote to approve loans.
-   - Managers are responsible for overseeing loan approvals, providing a more centralized approach.
+   - In contrast, this structure centralizes the approval process by assigning the responsibility to designated managers. Each manager has one vote to approve loans, which streamlines the decision-making process. This approach can be beneficial in situations where quick decisions are necessary, as it reduces the time required to gather input from multiple pool members. However, it may limit the democratic participation seen in the pool-managed structure.
 
+### Pool Approve Loan
+
+Once a P2PLoan is created, the next critical step is the **Pool Approve Loan** phase. This step involves the following key aspects:
+
+- **Review Process**: After a borrower submits a P2PLoan request, the pool members or managers (depending on the management structure) review the loan details, including the amount requested, the terms proposed, and any associated risks. This review process is vital for assessing the loan's viability and ensuring that it aligns with the pool's lending criteria.
+
+- **Collective Decision-Making**: The approval process is designed to be collaborative. In a pool-managed structure, each member has the opportunity to express their opinion and vote on the loan request. This collective decision-making process helps to mitigate risks, as multiple perspectives are considered before reaching a conclusion. It also enhances transparency, as all members are involved in the evaluation of loan requests.
+
+- **Initial Approval**: The outcome of the pool's review results in an initial approval or rejection of the loan request. If the loan is approved, it signifies that the pool believes the loan is a viable opportunity and is willing to proceed to the next step, where the borrower will provide their final approval. This initial approval is crucial as it sets the stage for the borrower to finalize their commitment to the loan terms.
+
+- **Impact on Borrower Approval**: The pool's decision to approve the loan is a prerequisite for the borrower to give their final approval. This means that the borrower must wait for the pool's consensus before they can proceed with sending collateral and confirming their acceptance of the loan terms. This step ensures that both parties—the pool and the borrower—are aligned on the loan's conditions before any funds are disbursed.
 
 ## Full Process
 
