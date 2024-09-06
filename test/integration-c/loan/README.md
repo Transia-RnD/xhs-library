@@ -6,8 +6,8 @@ The Loans Hook is a smart contract designed to facilitate various loan functiona
 
 ## XLS Inspiration
 
-[XLS-66: Loans](https://github.com/XRPLF/XRPL-Standards/discussions/190)
-[XLS-65: Pools](https://github.com/XRPLF/XRPL-Standards/discussions/192)
+- [XLS-66: Loans](https://github.com/XRPLF/XRPL-Standards/discussions/190)
+- [XLS-65: Pools](https://github.com/XRPLF/XRPL-Standards/discussions/192)
 
 ## Table of Contents
 
