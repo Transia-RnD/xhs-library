@@ -3,8 +3,10 @@
   "version": "0.0.1",
   "description": "A library of Xahau Hook Standards.",
   "scripts": {
-    "build:hooks": "c2wasm-cli contracts build",
-    "test:integration": "jest --config=jest.config.integration.js --runInBand",
+    "build:hooks-c": "hooks-toolkit-cli compile-c contracts-c build/",
+    "build:hooks-js": "hooks-toolkit-cli compile-js contracts-js build/",
+    "test:integration-c": "jest --config=jest.config.integration-c.js --runInBand",
+    "test:integration-js": "jest --config=jest.config.integration-c.js --runInBand",
     "lint": "eslint ./test/**/* --ext .ts",
     "format": "npx prettier --write ./test"
   },
@@ -14,7 +16,8 @@
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {
-    "@transia/hooks-toolkit": "^2.0.0-alpha.4",
+    "@transia/hooks-toolkit": "^2.0.0-alpha.1",
+    "@transia/hooks-toolkit-cli": "^1.0.5",
     "@transia/ripple-binary-codec": "^1.4.6-alpha.8",
     "c2wasm-cli": "^1.0.6",
     "chai": "^4.3.7",

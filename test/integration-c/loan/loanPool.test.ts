@@ -19,6 +19,7 @@ import {
   // clearAllHooksV3,
 } from '@transia/hooks-toolkit/dist/npm/src'
 import { IssuedCurrencyAmount } from '@transia/xrpl/dist/npm/models/common'
+import { makePayment } from './utils'
 
 describe('loanPool', () => {
   let testContext: XrplIntegrationTestContext
