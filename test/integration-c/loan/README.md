@@ -4,6 +4,11 @@
 
 The Loans Hook is a smart contract designed to facilitate various loan functionalities within a decentralized finance (DeFi) ecosystem. It encompasses multiple components, including the Pool, Loan, and P2PLoan, each serving distinct purposes. This documentation provides an overview of the functions of each component, the admin aspect, and a detailed process of how loans are managed, including the use of URITokens.
 
+## XLS Inspiration
+
+[XLS-66: Loans](https://github.com/XRPLF/XRPL-Standards/discussions/190)
+[XLS-65: Pools](https://github.com/XRPLF/XRPL-Standards/discussions/192)
+
 ## Table of Contents
 
 - [Components](#components)
