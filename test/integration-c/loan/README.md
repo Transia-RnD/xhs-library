@@ -24,7 +24,7 @@ The Loans Hook is a smart contract designed to facilitate various loan functiona
 
 ### Pool
 
-The Pool component is responsible for managing liquidity and facilitating loan approvals. Its primary functions include:
+The Pool component is responsible for managing liquidity. Its primary functions include:
 
 - **Create Pool**: Establish a new pool for lending and borrowing activities.
 - **Deposit Liquidity**: Allow lenders to deposit funds into the pool, increasing available liquidity.
