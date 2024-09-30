@@ -6,7 +6,7 @@
     "build:hooks-c": "hooks-toolkit-cli compile-c contracts-c build/",
     "build:hooks-js": "hooks-toolkit-cli compile-js contracts-js build/",
     "test:integration-c": "jest --config=jest.config.integration-c.js --runInBand",
-    "test:integration-js": "jest --config=jest.config.integration-c.js --runInBand",
+    "test:integration-js": "jest --config=jest.config.integration-js.js --runInBand",
     "lint": "eslint ./test/**/* --ext .ts",
     "format": "npx prettier --write ./test"
   },
@@ -19,9 +19,11 @@
     "@transia/hooks-toolkit": "^2.0.0-alpha.1",
     "@transia/hooks-toolkit-cli": "^1.0.5",
     "@transia/ripple-binary-codec": "^1.4.6-alpha.8",
+    "@transia/xahau-models": "^2.7.3-alpha.29",
     "c2wasm-cli": "^1.0.6",
     "chai": "^4.3.7",
     "crypto-js": "^4.1.1",
+    "jshooks-api": "^1.0.5",
     "xrpl-client": "^2.3.1",
     "xrpl-orderbook-reader": "^0.4.0"
   },

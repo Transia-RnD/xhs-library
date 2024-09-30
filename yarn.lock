@@ -859,6 +859,15 @@
     elliptic "^6.5.4"
     hash.js "^1.0.3"
 
+"@transia/xahau-models@^2.7.3-alpha.29":
+  version "2.7.3-alpha.29"
+  resolved "https://registry.yarnpkg.com/@transia/xahau-models/-/xahau-models-2.7.3-alpha.29.tgz#17f28e5ed37d6ae4b9bbc9215b0843afb6fab677"
+  integrity sha512-MmIS55eTOHcS3skCzS23043QW0m9tLLmuPqq0L5lDI5mOuTcl5Euk5WjD2WcETivxNvlOExqLmp21jmhseXMww==
+  dependencies:
+    "@types/node" "^20.4.2"
+    ts-node "^10.9.1"
+    typescript "^5.1.6"
+
 "@transia/xrpl@^2.7.3-alpha.28":
   version "2.7.3-alpha.28"
   resolved "https://registry.yarnpkg.com/@transia/xrpl/-/xrpl-2.7.3-alpha.28.tgz#e1b8e941432f29fefd461fa9cba5092c105f62cc"
@@ -1002,6 +1011,13 @@
   version "10.12.18"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.12.18.tgz#1d3ca764718915584fcd9f6344621b7672665c67"
   integrity sha512-fh+pAqt4xRzPfqA6eh3Z2y6fyZavRIumvjhaCL753+TVkGKGhpPeyrJG2JftD0T9q4GF00KjefsQ+PQNDdWQaQ==
+
+"@types/node@^20.4.2":
+  version "20.16.5"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.16.5.tgz#d43c7f973b32ffdf9aa7bd4f80e1072310fd7a53"
+  integrity sha512-VwYCweNo3ERajwy0IUlqqcyZ8/A7Zwa9ZP3MnENWcB11AejO+tLy3pu850goUW2FC/IJMdZUfKpX/yxL1gymCA==
+  dependencies:
+    undici-types "~6.19.2"
 
 "@types/semver@^7.3.12":
   version "7.5.0"
@@ -2980,6 +2996,13 @@ jshooks-api@^1.0.2:
   resolved "https://registry.yarnpkg.com/jshooks-api/-/jshooks-api-1.0.2.tgz#6673f1a9dc5cdc35e9236ba7437e079caa0246a6"
   integrity sha512-gEJQtjxKd85o+ldYucdARChBByv32Ihx0/Lh9jSzdjKDz2TCIcNXIqIAc0livravExORoHoPu+E6ELhm9XZluA==
 
+jshooks-api@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/jshooks-api/-/jshooks-api-1.0.5.tgz#60fe1c33db524c259eb50a142365f8c35942370f"
+  integrity sha512-iyPYrWOcTAQUrC+dH6diw8zosDT+CWRfL6ZbUApPB41WBjGKfIsimlJnvE4/NinxnCLTViUTr/SQFoCDKSOIxQ==
+  dependencies:
+    "@transia/xahau-models" "^2.7.3-alpha.29"
+
 json-parse-even-better-errors@^2.3.0:
   version "2.3.1"
   resolved "https://registry.yarnpkg.com/json-parse-even-better-errors/-/json-parse-even-better-errors-2.3.1.tgz#7c47805a94319928e05777405dc12e1f7a4ee02d"
@@ -3832,6 +3855,16 @@ typescript@^4.9.5:
   version "4.9.5"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.9.5.tgz#095979f9bcc0d09da324d58d03ce8f8374cbe65a"
   integrity sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==
+
+typescript@^5.1.6:
+  version "5.6.2"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.6.2.tgz#d1de67b6bef77c41823f822df8f0b3bcff60a5a0"
+  integrity sha512-NW8ByodCSNCwZeghjN3o+JX5OFH0Ojg6sadjEKY4huZ52TqbJTJnDo5+Tw98lSy63NZvi4n+ez5m2u5d4PkZyw==
+
+undici-types@~6.19.2:
+  version "6.19.8"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-6.19.8.tgz#35111c9d1437ab83a7cdc0abae2f26d88eda0a02"
+  integrity sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==
 
 update-browserslist-db@^1.0.11:
   version "1.0.11"
