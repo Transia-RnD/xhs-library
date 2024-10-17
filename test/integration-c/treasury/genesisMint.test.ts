@@ -168,7 +168,7 @@ export const hookBeforeAll = async (
   } as SetHookParams)
 }
 
-describe('treasury', () => {
+describe('GenesisMint', () => {
   let testContext: XrplIntegrationTestContext
 
   beforeAll(async () => {
