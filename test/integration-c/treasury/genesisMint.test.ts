@@ -152,7 +152,7 @@ describe('GenesisMint', () => {
   let testContext: XrplIntegrationTestContext
 
   beforeAll(async () => {
-    testContext = await setupClient(serverUrl)
+    testContext = await setupClient(serverUrl, true)
     await hookBeforeAll(testContext)
   })
 
