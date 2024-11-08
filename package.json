@@ -16,7 +16,7 @@
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {
-    "@transia/hooks-toolkit": "^2.0.0-alpha.1",
+    "@transia/hooks-toolkit": "/Users/darkmatter/projects/ledger-works/hooks-toolkit-ts",
     "@transia/hooks-toolkit-cli": "^1.0.5",
     "@transia/ripple-binary-codec": "^1.4.6-alpha.8",
     "@transia/xahau-models": "^2.7.3-alpha.29",

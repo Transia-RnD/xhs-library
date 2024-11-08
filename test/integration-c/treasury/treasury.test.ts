@@ -65,6 +65,9 @@ import { getEmittedTxnID } from '../../utils/misc'
 // rollback: Treasury: Could not update state entry, bailing -- NOT TESTABLE
 // accept: Treasury: Released successfully.
 
+// Failure on Emit With Callback
+// Test Amounts after Payment/ClaimReward
+
 export const hookBeforeAll = async (
   testContext: XrplIntegrationTestContext
 ) => {

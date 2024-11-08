@@ -804,6 +804,16 @@
     pako "^2.1.0"
     reconnecting-websocket "^4.4.0"
 
+"@transia/hooks-toolkit@/Users/darkmatter/projects/ledger-works/hooks-toolkit-ts":
+  version "2.0.0-alpha.4"
+  dependencies:
+    "@transia/xrpl" "^2.7.3-alpha.28"
+    crypto-js "^4.1.1"
+    dotenv "^16.4.5"
+    jshooks-api "^1.0.5"
+    reconnecting-websocket "^4.4.0"
+    winston "^3.10.0"
+
 "@transia/hooks-toolkit@^2.0.0-alpha.1":
   version "2.0.0-alpha.4"
   resolved "https://registry.yarnpkg.com/@transia/hooks-toolkit/-/hooks-toolkit-2.0.0-alpha.4.tgz#6db674ab963aa52ae55b708c6748f5175350a8ad"

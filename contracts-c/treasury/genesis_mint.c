@@ -3,35 +3,37 @@
 #define sfGenesisMints ((15U << 16U) + 96U)
 #define sfGenesisMint ((14U << 16U) + 96U)
 
+// clang-format off
 uint8_t txn[238] =
-    {
-        /* size,upto */
-        /* 3,   0,   tt = Payment           */ 0x12U, 0x00U, 0x00U,
-        /* 5,   3,   flags                  */ 0x22U, 0x00U, 0x00U, 0x00U, 0x00U,
-        /* 5,   8,   sequence               */ 0x24U, 0x00U, 0x00U, 0x00U, 0x00U,
-        /* 6,   13,  firstledgersequence    */ 0x20U, 0x1AU, 0x00U, 0x00U, 0x00U, 0x00U,
-        /* 6,   19,  lastledgersequence     */ 0x20U, 0x1BU, 0x00U, 0x00U, 0x00U, 0x00U,
-        /* 9,   25,  amount                 */ 0x61U, 0x99U, 0x99U, 0x99U, 0x99U, 0x99U, 0x99U, 0x99U, 0x99U,
-        /* 9,   34,  fee                    */ 0x68U, 0x40U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
-        /* 35,  43,  signingpubkey          */ 0x73U, 0x21U, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        /* 22,  78,  account                */ 0x81U, 0x14U, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        /* 22,  100, destination            */ 0x83U, 0x14U, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        /* 116, 122  emit details           */
-        /* 0,   238                         */
+{
+/* size,upto */
+/* 3,   0,   tt = Payment           */   0x12U, 0x00U, 0x00U,
+/* 5,   3,   flags                  */   0x22U, 0x00U, 0x00U, 0x00U, 0x00U,
+/* 5,   8,   sequence               */   0x24U, 0x00U, 0x00U, 0x00U, 0x00U,
+/* 6,   13,  firstledgersequence    */   0x20U, 0x1AU, 0x00U, 0x00U, 0x00U, 0x00U,
+/* 6,   19,  lastledgersequence     */   0x20U, 0x1BU, 0x00U, 0x00U, 0x00U, 0x00U,
+/* 9,   25,  amount                 */   0x61U, 0x99U, 0x99U, 0x99U, 0x99U, 0x99U, 0x99U, 0x99U, 0x99U,
+/* 9,   34,  fee                    */   0x68U, 0x40U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
+/* 35,  43,  signingpubkey          */   0x73U, 0x21U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/* 22,  78,  account                */   0x81U, 0x14U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/* 22,  100, destination            */   0x83U, 0x14U, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/* 116, 122  emit details           */ 
+/* 0,   238                         */ 
 };
+// clang-format on
 
-#define FLS_OUT (txn + 15U)
-#define LLS_OUT (txn + 21U)
-#define FEE_OUT (txn + 35U)
+#define FLS_OUT    (txn + 15U)
+#define LLS_OUT    (txn + 21U)
+#define FEE_OUT    (txn + 35U)
 #define AMOUNT_OUT (txn + 25U)
-#define ACC_OUT (txn + 80U)
-#define DEST_OUT (txn + 102U)
-#define EMIT_OUT (txn + 122U)
+#define ACC_OUT    (txn + 80U)
+#define DEST_OUT   (txn + 102U)
+#define EMIT_OUT   (txn + 122U)
 
 int64_t hook(uint32_t reserved)
 {
     hook_account(ACC_OUT, 20);
-    if (hook_param(DEST_OUT, 20, "D", 1) != 20)
+    if(hook_param(DEST_OUT, 20, "D", 1) != 20)
         rollback(SBUF("Genesis Mint: Destination Account not set as Hook parameter"), 1);
 
     otxn_slot(1);
@@ -85,7 +87,7 @@ int64_t hook(uint32_t reserved)
     }
 
     uint8_t emithash[32];
-    if (emit(SBUF(emithash), SBUF(txn)) != 32)
+    if(emit(SBUF(emithash), SBUF(txn)) != 32)
         rollback(SBUF("Genesis Mint: Failed To Emit."), 3);
 
     accept(SBUF("Genesis Mint: Passing ClaimReward."), 4);
