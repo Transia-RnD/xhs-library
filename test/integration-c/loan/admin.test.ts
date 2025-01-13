@@ -179,6 +179,7 @@ describe('pool', () => {
     const random = Math.floor(Math.random() * 26)
     const letter = String.fromCharCode(65 + random)
     const url = `ipfs://QmRYA9TZ7ajm26Z1hEjaTUBDaJCRvicMfivGSgnFwusTD${letter}`
+
     // Loan Settings
     const originationFee = 100
     const serviceFee = 100
