@@ -339,6 +339,13 @@ int64_t hook(uint32_t reserved)
         if (otxn_param(SBUF(owner_accid), "ACC", 3) != 20)
             NOPE("native_fund_nfo.c: Missing owner parameter.");
 
+        uint8_t keylet[34];
+        if (util_keylet(keylet, 34, KEYLET_ACCOUNT, owner_accid, 20, 0, 0, 0, 0) != 34)
+            rollback(SBUF("native_fund_nfo.c: Fetching Keylet Failed."), 8);
+
+        if (slot_set(SBUF(keylet), 1) == DOESNT_EXIST)
+            rollback(SBUF("native_fund_nfo.c: `ACC` Does Not Exist."), 9);
+
         // Remit the new amount to the owner
         float_sto(AMOUNT_OUT, 49, curr_nav, 20, hook_accid + 12, 20, amount_xfl, sfAmount); 
         PREPARE_REMIT_TXN(hook_accid + 12, owner_accid + 12, TXN_SIZE);
